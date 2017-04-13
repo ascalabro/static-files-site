@@ -1,0 +1,264 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name=viewport content=width=device-width,initial-scale=1>
+<style>
+* {
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+body {
+  font: 16px Georgia, serif;
+}
+pre, code {
+  font: 14px Menlo, 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+  white-space: pre-wrap;
+  background: #e5e5e5;
+}
+blockquote {
+  background: #e5e5e5;
+  margin-left: 0;
+  margin-right: 0;
+  border-left: 4px solid #aaa;
+  padding: 1em 0 1em 1em;
+}
+li p:first-child, blockquote p:first-child {
+  margin-top: 0;
+}
+li p:last-child, blockquote p:last-child {
+  margin-bottom: 0;
+}
+</style>
+<title>Spotlight syntax, mdfind examples, and metadata attributes</title>
+<h1>Spotlight syntax, mdfind examples, and metadata attributes</h1>
+<h2>Spotlight search syntax</h2>
+<p>See <a href="https://developer.apple.com/library/mac/documentation/Carbon/Conceptual/SpotlightQuery/Concepts/QueryFormat.html">https://developer.apple.com/library/mac/documentation/Carbon/Conceptual/SpotlightQuery/Concepts/QueryFormat.html</a> for documentation about the Spotlight search syntax. Here are some examples:</p>
+<pre><code>name:file.txt
+kind:&quot;jpeg image&quot;
+date:today
+date:&quot;this week&quot;
+modified:12/31/11
+created:12/1/11-12/31/11
+kind:video AND size:&lt;100000</code></pre>
+<h2>Commonly used attributes</h2>
+<p><code>kMDItemPath</code>: absolute path.<br> <code>kMDItemFSName</code>: basename.<br> <code>kMDItemFSSize</code>: size in bytes.<br> <code>kMDItemDisplayName</code>: display name.<br> <code>kMDItemContentType</code>: UTI.<br> <code>kMDItemContentTypeTree</code>: UTI and parent UTIs.<br> <code>kMDItemKind</code>: a localized name for the content type.<br> <code>kMDItemFSContentChangeDate</code>: modification time.<br> <code>kMDItemFSCreationDate</code>: creation time.<br> <code>kMDItemLastUsedDate</code>: date last opened.<br> <code>kMDItemDateAdded</code>: date moved or date first indexed.<br> <code>kMDItemFinderComment</code>: Spotlight comment.<br> <code>kMDItemTextContent</code>: plain text content of for example text, HTML, or PDF files.<br> <code>kMDItemDurationSeconds</code>: for example the duration of an audio or video file.<br> <code>kMDItemTitle</code>: for example the title of a webloc, PDF, or MP3 file.<br> <code>kMDItemURL</code>: for example the URL of a webloc file.<br> <code>kMDItemWhereFroms</code>: the URL or URLs that a file was downloaded from.<br> <code>kMDItemUserTags</code>: tags.<br> <code>kMDItemAuthors</code>: for example the artist of an MP3 file.</p>
+<h2>Shell examples</h2>
+<pre><code>mdfind &#39;&quot;exact phrase&quot;&#39;
+mdfind -name javascript -onlyin ~/Books
+mdfind &#39;kMDItemFSName=*.pdf&#39;
+mdfind &#39;kMDItemFSName=mdfind&amp;&amp;kMDItemContentType=public.unix-executable&#39;
+mdfind kMDItemContentType=com.apple.application-bundle -onlyin /usr/local
+mdfind kMDItemContentTypeTree=com.apple.bundle
+mdfind kMDItemContentTypeTree=public.movie
+mdfind &#39;kMDItemTextContent=&quot;*expose*&quot;cd&#39; # search for files whose text content matches `expose` ignoring case and diacritics
+mdfind &#39;kMDItemTextContent=&quot;*search phrase*&quot;c&#39; -onlyin ~/Library/Caches/Metadata/Safari/History
+mdfind kMDItemFSSize=$(stat -f%z file) # quickly find potentially duplicate files by size
+mdfind &#39;kMDItemFSCreationDate&gt;$time.iso(2014-03-16T01:03:08Z)&#39; -onlyin . # like `TZ=UTC0 find . -newerBt &#39;2014-03-16 01:03:08&#39;`
+mdfind &#39;kMDItemFSContentChangeDate&gt;$time.now(-86400)&#39; -onlyin ~/Library/Caches/Metadata/Safari/History|xargs mdls -n kMDItemURL|cut -d\&quot; -f2
+mdfind &#39;kMDItemDateAdded&gt;$time.today(-7)&#39; # find files that were moved or first indexed in the last week
+mdfind &#39;kMDItemLastUsedDate!=*&#39; -onlyin . # find files that have not been opened before
+mdfind &#39;kMDItemKind=*movie&amp;&amp;kMDItemPixelHeight&gt;=720&#39;
+mdfind &#39;kMDItemAuthors=&quot;Artist Name&quot;&#39; -onlyin ~/Music
+mdfind &#39;kMDItemContentType=*&#39; -onlyin . # list all indexed files (kMDItemFSName=* stopped working in 10.9)
+mdfind &#39;kMDItemURL=*stackoverflow.com*&#39; -onlyin ~/Library/Caches/Metadata/Safari/History
+mdfind &#39;kMDItemFSSize&gt;1e8&#39;
+mdfind -0 -onlyin ~/Music &#39;kMDItemFSName=*.mp3&amp;&amp;kMDItemAudioBitRate&lt;=192000&#39;|xargs -0 mdls -n kMDItemAlbum|sort -u
+mdfind $&#39;kMDItemFSName=&quot;*\n*&quot;&#39;
+mdfind -onlyin / # search only in the main OS X volume, like `mdfind -onlyin /Volumes/Macintosh\ HD`
+mdfind &#39;kMDItemDurationSeconds&lt;=180&amp;&amp;kMDItemContentType=public.mp3&#39; -onlyin .
+mdfind &#39;kMDItemUserTags=*&#39; # find files that have tags
+mdfind -s example # like `mdfind &quot;$(PlistBuddy -c &#39;Print RawQuery&#39; ~/Library/Saved\ Searches/example.savedSearch)&quot;`
+mdfind &#39;search phrase&#39; -0|xargs -0 ls -l
+sudo mdfind com_apple_backup_excludeItem=com.apple.backupd # find files excluded from Time Machine backups
+mdls -rn kMDItemLastUsedDate -n kMDItemFSName *|tr \\0 \\n|paste - -|sort # sort by date last opened
+mdls -rn kMDItemCFBundleIdentifier &quot;$(mdfind &#39;kMDItemContentType=com.apple.application-bundle&amp;&amp;kMDItemFSName=iTunes.app&#39;|head -n1)&quot;
+mdls -n kMDItemURL $(mdfind &#39;search phrase&#39; -onlyin Library/Caches/Metadata/Safari/History)|cut -d\&quot; -f2
+for f in *.pdf;do echo $(mdls -rn kMDItemNumberOfPages &quot;$f&quot;) &quot;$f&quot;;done
+for f in *.txt;do echo $(mdls -rn kMDItemUseCount &quot;$f&quot;) &quot;$f&quot;;done|sort -n # sort files by times opened
+touch /tmp/a.tex;mdls -n kMDItemContentTypeTree /tmp/a.tex # show the UTI and parent UTIs for the .tex extension</code></pre>
+<h2>mdimport -A</h2>
+<pre><code>$ mdimport -A|sed $&#39;s/\t\t/;/g;s/(null)//g&#39;|tr -d \&#39;
+_kMDItemUserTags;;;
+com_apple_ats_font_invalid;Invalid Font;Invalid Font;
+com_apple_ats_name_family;Family name;Font Family name;
+com_apple_ats_name_fond;FOND name;FOND name;
+com_apple_ats_name_full;Full name;Font Full name;
+com_apple_ats_name_postscript;PostScript name;PostScript name;
+com_apple_ats_name_style;Style name;Font Style name;
+com_apple_ats_names;;;
+com_apple_mail_attachmentKinds;;;
+com_apple_mail_attachmentNames;Attachment Names;A list of the names of attachments associated with a message;
+com_apple_mail_attachmentSpecificTypes;;;
+com_apple_mail_attachmentTypes;Attachment Types;A list of the types for attachments associated with a message;
+com_apple_mail_dateLastViewed;Date Last Viewed;The date a message was last viewed;
+com_apple_mail_dateReceived;Date Received;The date a message was received;
+com_apple_mail_flagColor;Flag Color;The color of the flag associated with a message;
+com_apple_mail_flagged;Flagged;Whether or not a message is flagged;
+com_apple_mail_messageID;Message ID;The message ID from the message header;
+com_apple_mail_priority;Priority;The numbered priority of a message;
+com_apple_mail_read;Read Status;Whether or not a message has been read;
+com_apple_mail_repliedTo;Replied To;Whether or not a message has been replied to;
+kMDItemAcquisitionMake;Device make;Make of the device used to acquire this document;make
+kMDItemAcquisitionModel;Device model;Model of the device used to acquire this document;model
+kMDItemAlbum;Album;Title for a collection of media, such as a record album;album, title
+kMDItemAlternateNames;Alternate display names;Alternate names of the file;
+kMDItemAltitude;Altitude;The altitude of the item in meters above sea level, expressed using the WGS84 datum.  Negative values lie below sea level.;altitude
+kMDItemAperture;Aperture value;Size of the lens aperture as a log-scale APEX value;aperture, fstop
+kMDItemAppStoreCategory;Category;App Store Category item is a member of;category
+kMDItemAppStoreCategoryType;;;
+kMDItemAppleLoopDescriptors;Loop descriptors;Keywords describing the mood and other aspects of the loop;
+kMDItemAppleLoopsKeyFilterType;Loop scale type;Whether the loop uses the major or minor scale, neither scale, or can be used with both;
+kMDItemAppleLoopsLoopMode;Loop file type;Whether the file is a looping or non-looping file. Looping files adjust their tempo to the song tempo, while non-looping files keep their recorded tempo;
+kMDItemAppleLoopsRootKey;Loop original key;Shows the loops original key. The key is the root note or tonic for the loop, and does not include the scale type;
+kMDItemApplicationCategories;Application Categories;Categories application is a member of;categories
+kMDItemAttributeChangeDate;;;
+kMDItemAudiences;Audiences;Who the document is intended for;to, audience
+kMDItemAudioBitRate;Audio bit rate;Bit rate of the audio in the media;audiobitrate, bitrate
+kMDItemAudioChannelCount;Audio channels;Number of channels in the files audio data;channels
+kMDItemAudioEncodingApplication;Audio encoding application;Name of the application that encoded the data in the audio file;encoder, encodedby, audioencodingapplication
+kMDItemAudioSampleRate;Sample rate;Sample rate of the files audio data;audiosamplerate, samplerate
+kMDItemAudioTrackNumber;Track number;Track number of the song that is part of an album;tracknumber
+kMDItemAuthorAddresses;Author addresses;Addresses for authors of this item;from
+kMDItemAuthorEmailAddresses;Author Email addresses;Email addresses for authors of this item;from, email, mail
+kMDItemAuthors;Authors;Authors of this item;from, author, with, by
+kMDItemBitsPerSample;Bits per sample;Number of bits per sample;bitspersample, bps
+kMDItemCFBundleIdentifier;;;
+kMDItemCity;City;City of the item;city
+kMDItemCodecs;Codecs;Codecs used to encode and decode the media;codec
+kMDItemColorSpace;Color space;Color space model of this image;colorspace
+kMDItemComment;Comment;Comments about this item;comment
+kMDItemComposer;Composer;Composer of the song in the audio file;by, composer, author
+kMDItemContactKeywords;Contact keywords;Contacts associated with this item;contact, contactkeyword, keyword
+kMDItemContentCreationDate;Content created;Date when the content of this item was created;contentcreated, created, date
+kMDItemContentModificationDate;Content modified;Date when the content of this item was modified;contentmodified, modified, date
+kMDItemContentType;;;
+kMDItemContentTypeTree;;;
+kMDItemContributors;Contributors;People or organizations contributing to the content of the document;by, contributor, author, with
+kMDItemCopyright;Copyright;Copyright information about this item;copyright
+kMDItemCountry;Country;Country or location where the item was created according to the provider;country
+kMDItemCoverage;Coverage;Extent or scope of the content of the document;coverage
+kMDItemCreator;Content Creator;Application used to create the document;creator
+kMDItemDateAdded;Date added;Date when this item was last moved;dateadded, added, date
+kMDItemDeliveryType;Delivery type;Method used to deliver the media (Fast Start or RTSP);delivery
+kMDItemDescription;Description;Description of the content of the document;description, comment
+kMDItemDestinationRecipients;;;
+kMDItemDirector;Director;Director;
+kMDItemDisplayName;Display name;Localized name of the file;name, displayname
+kMDItemDocumentContainer;Document Container;Containing folder of item;container
+kMDItemDocumentLineage;;;
+kMDItemDueDate;Due date;Date this item is due;duedate, date
+kMDItemDurationSeconds;Duration;Duration of this item in seconds;duration, time
+kMDItemEXIFGPSVersion;EXIF GPS version;The version of GPSInfoIFD in EXIF used to generate the metadata;
+kMDItemEXIFVersion;EXIF version;Version of EXIF used to generate the metadata;exifversion
+kMDItemEditors;Editors;Editors of this item;editor
+kMDItemEmailAddresses;Email addresses;Email addresses associated with this item;email, mail
+kMDItemEncodingApplications;Encoding software;Software used to convert the original content;encoder, encodedby, encodingapplication
+kMDItemExecutableArchitectures;Executable Architectures;Architectures the item requires to execute;architectures
+kMDItemExecutablePlatform;Executable Platform;Platform the item requires to execute;platform
+kMDItemExposureMode;Exposure mode;Mode used for the exposure;exposuremode
+kMDItemExposureProgram;Exposure program;Type of program used by the camera to set the exposure: Manual, Normal, Aperture priority, ...;exposure, exposureprogram
+kMDItemExposureTimeSeconds;Exposure time;Time the lens was open during exposure;exposuretime, time
+kMDItemFNumber;F number;Focal length of the lens divided by the diameter of the aperture;fnumber, fstop
+kMDItemFSContentChangeDate;Modified;Date the file content was last changed;modified
+kMDItemFSCreationDate;Created;Date the file was created;created
+kMDItemFSExists;;;
+kMDItemFSHasCustomIcon;Custom Icon;Whether the file has a custom icon;
+kMDItemFSInvisible;File invisible;Whether the file is visible;invisible
+kMDItemFSIsExtensionHidden;File extension hidden;Whether the file extension is hidden;
+kMDItemFSIsReadable;;;
+kMDItemFSIsStationery;Stationery;Whether the file is stationery;stationery
+kMDItemFSIsWriteable;;;
+kMDItemFSLabel;File label;Finder label assigned to the file;
+kMDItemFSName;Filename;Name of the file;filename
+kMDItemFSNodeCount;Number of items;Number of files and folders in the folder;
+kMDItemFSOwnerGroupID;Group;Group ID of owner of the file;group
+kMDItemFSOwnerUserID;Owner;User ID of the owner of the file;owner
+kMDItemFSSize;File size;Logical size of the file on disk in bytes;size
+kMDItemFinderComment;Spotlight comment;Spotlight comment for this item;comment, spotlightcomment
+kMDItemFinderOpenDate;;;
+kMDItemFlashOnOff;Flash;Whether the picture was taken using a flash;flash
+kMDItemFocalLength;Focal length;Focal length of the lens in millimeters (mm);focallength
+kMDItemFonts;Fonts;Fonts used in this item;font
+kMDItemGenre;Genre;Genre;
+kMDItemHasAlphaChannel;Alpha channel;Whether the image has an Alpha channel;alpha
+kMDItemHeadline;Headline;Publishable summary of the contents of the item;headline, title
+kMDItemISOSpeed;ISO speed;ISO speed of the camera when the picture was taken;iso
+kMDItemIdentifier;Identifier;Reference to a resource within a given context;id
+kMDItemInformation;Movie information;Movie information;
+kMDItemInstantMessageAddresses;Instant message addresses;Instant message addresses associated with this item;chat, imname
+kMDItemInstructions;Instructions;Other information concerning the item, such as handling instructions;instructions
+kMDItemIsApplicationManaged;Is Application Managed;The file is owned and managed by an application;appmanaged
+kMDItemIsGeneralMIDISequence;General MIDI sequence;Whether the MIDI sequence contained in the file is setup for use with a General MIDI device;ismidi
+kMDItemIsLikelyJunk;Is Junk;Whether the file is likely to be considered a junk file;isjunk
+kMDItemIsQuarantined;;;
+kMDItemIsScreenCapture;;;
+kMDItemKeySignature;Key signature;Musical key of the song in the audio file;key, keysignature
+kMDItemKeywords;Keywords;Keywords associated with this item;keyword
+kMDItemKind;Kind;Kind of this item;kind
+kMDItemLanguages;Languages;Languages of the content of the document;language
+kMDItemLastUsedDate;Last opened;Date when this item was last used;lastused, date
+kMDItemLatitude;Latitude;The latitude of the item in degrees north of the equator, expressed using the WGS84 datum.  Negative values lie south of the equator.;latitude
+kMDItemLayerNames;Layers;Names of the layers in the file;layer
+kMDItemLogicalSize;Logical size;Logical size of the item in bytes;
+kMDItemLongitude;Longitude;The longitude of the item in degrees east of the prime meridian, expressed using the WGS84 datum.  Negative values lie west of the prime meridian.;longitude
+kMDItemLyricist;Lyricist;Lyricist of the song in the audio file;by, lyricist, author
+kMDItemMaxAperture;Max aperture;Smallest F number of the lens in APEX value units, usually in the range of 00.00 to 99.99;maxaperture
+kMDItemMediaTypes;Media types;Media types present in the content;media, contains, mediatype
+kMDItemMeteringMode;Metering mode;The metering mode (Unknown, Average, CenterWeightedAverage, Spot, MultiSpot, Pattern, Partial);metering, meteringmode
+kMDItemMusicalGenre;Musical genre;Musical genre of the song in the audio file;genre, musicalgenre
+kMDItemMusicalInstrumentCategory;Instrument category;Instrument category to which the file belongs;instrument, instrumentcategory
+kMDItemMusicalInstrumentName;Instrument name;Name of instrument relative to the instrument category;instrument, instrumentname
+kMDItemNamedLocation;Location;Name of the location or point of interest;location
+kMDItemNumberOfPages;Pages;Number of pages in the document;pages
+kMDItemOrganizations;Organizations;Organizations that created the document;organization
+kMDItemOrientation;Orientation;Orientation of the picture (landscape or portrait);orientation
+kMDItemOriginApplicationIdentifier;;;
+kMDItemOriginMessageIDkMDItemOriginMessageID;;;
+kMDItemOriginSenderDisplayName;;;
+kMDItemOriginSenderHandle;;;
+kMDItemOriginSubject;;;
+kMDItemOriginalFormat;Original Format;Original Format;
+kMDItemOriginalSource;Original Source;Original Source;
+kMDItemPageHeight;Page height;Height of the document page in points;pageheight, height
+kMDItemPageWidth;Page width;Width of the document page in points;pagewidth, width
+kMDItemParticipants;Participants;Participants in this item;
+kMDItemPath;File pathname;Complete pathname of this file;path
+kMDItemPerformers;Performers;Performers;
+kMDItemPhoneNumbers;Phone number;Phone numbers associated with this item;phone, phonenumber
+kMDItemPhysicalSize;Physical size;Physical size of the item in bytes;
+kMDItemPixelCount;Pixel count;Total number of pixels in the document;pixelcount
+kMDItemPixelHeight;Pixel height;Height of the document in pixels;pixelheight, height
+kMDItemPixelWidth;Pixel width;Width of the document in pixels;pixelwidth, width
+kMDItemProducer;Producer;Producer of this item;producer
+kMDItemProfileName;Color profile;Name of the color profile used for the image;profile
+kMDItemProjects;Projects;Projects this item is part of;
+kMDItemPublishers;Publishers;Publisher of the document;publisher
+kMDItemPurchaseDate;Purchase Date;Date this item was purchased;purchasedate
+kMDItemRecipientAddresses;Recipient addresses;Addresses for recipients of this item;to
+kMDItemRecipientEmailAddresses;Recipient Email addresses;Email addresses for recipients of this item;to, email, mail
+kMDItemRecipients;Recipients;Recipients of this item;to, recipient, with
+kMDItemRecordingDate;Recording date;Date the song was recorded;recordingdate, date
+kMDItemRecordingYear;Year recorded;Year the item was recorded;yearrecorded, year
+kMDItemRedEyeOnOff;Red eye;Whether red eye correction was on or off;redeye
+kMDItemResolutionHeightDPI;Resolution height;Resolution height of this image in DPI;heightdpi, dpi
+kMDItemResolutionWidthDPI;Resolution width;Resolution width of this image in DPI;widthdpi, dpi
+kMDItemRights;Rights;Link to information about the rights held on the document;rights
+kMDItemScreenCaptureType;;;
+kMDItemSecurityMethod;Security;Encryption method used to make the document secure;security, securitymethod
+kMDItemStarRating;Rating;User Rating;starrating
+kMDItemStateOrProvince;State or Province;State or province of the item according to the provider;state, province
+kMDItemStreamable;Streamable;Whether the content is prepared for streaming;streamable
+kMDItemSubject;Subject;Subject of this item;subject, title
+kMDItemSupportFileType;;;
+kMDItemTempo;Tempo;Tempo of the music in the audio file in Beats Per Minute;tempo
+kMDItemTextContent;Text content;Text content of this item;content, contains, intext
+kMDItemTheme;Theme;Theme of this item;theme
+kMDItemTimeSignature;Time signature;Time signature of the song in the audio or MIDI file;timesignature
+kMDItemTitle;Title;Title of this item;title
+kMDItemTotalBitRate;Total bit rate;Combined bit rate of the audio and video in the media;totalbitrate, bitrate
+kMDItemURL;URL;URL of this item;url
+kMDItemUsedDates;Used dates;Dates when this item was used;used, date
+kMDItemUserTags;Tags;Tags associated with this item;tag
+kMDItemVersion;Version;Version number of this item;version
+kMDItemVideoBitRate;Video bit rate;Bit rate of the video in the media;videobitrate, bitrate
+kMDItemWhereFroms;Where from;Where the item came from;from, source, wherefrom
+kMDItemWhiteBalance;White balance;White balance setting of the camera when the picture was taken;whitebalance</code></pre>

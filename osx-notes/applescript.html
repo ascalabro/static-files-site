@@ -1,0 +1,1196 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name=viewport content=width=device-width,initial-scale=1>
+<style>
+* {
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+body {
+  font: 16px Georgia, serif;
+}
+pre, code {
+  font: 14px Menlo, 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+  white-space: pre-wrap;
+  background: #e5e5e5;
+}
+blockquote {
+  background: #e5e5e5;
+  margin-left: 0;
+  margin-right: 0;
+  border-left: 4px solid #aaa;
+  padding: 1em 0 1em 1em;
+}
+li p:first-child, blockquote p:first-child {
+  margin-top: 0;
+}
+li p:last-child, blockquote p:last-child {
+  margin-bottom: 0;
+}
+</style>
+<title>AppleScript</title>
+<h1>AppleScript</h1>
+<h2>Shell functions</h2>
+<pre><code>sjs(){ osascript -e&#39;on run{a}&#39; -e&#39;tell app&quot;safari&quot;to do javascript a in document 1&#39; -eend &quot;$1&quot;; }
+sjss(){ osascript -e&#39;on run{a}&#39; -e&#39;set out to&quot;&quot;&#39; -e&#39;tell app&quot;safari&quot;to repeat with t in(get tabs of window 1)&#39; -e&#39;set out to out&amp;(do javascript a in t)&amp;linefeed&#39; -eend -eout -eend &quot;$1&quot;; }
+sso(){ osascript -e&#39;tell app&quot;safari&quot;to source of document 1&#39;; }
+ss(){ sjs document.body.innerHTML; }
+sss(){ sjss document.body.innerHTML; }
+st(){ osascript -e&#39;set text item delimiters to linefeed&#39; -e&#39;tell app&quot;safari&quot;to(url of tabs of window 1)as text&#39;; }
+s1(){ osascript -e&#39;tell app&quot;safari&quot;to url of document 1&#39;; }
+scl(){ osascript -e&#39;tell app&quot;safari&quot;to close window 1&#39;; }
+scm(){ osascript -e&#39;on run{a}&#39; -e&#39;tell app&quot;safari&quot;to close tabs of window 1 whose url contains a&#39; -eend &quot;$1&quot;; }
+no(){ osascript -e&#39;on run{a}&#39; -e&#39;display notification&quot;&quot;with title a&#39; -eend &quot;${1-notification}&quot;; }
+copy(){ osascript -e&#39;on run{a}&#39; -e&#39;set the clipboard to posix file a&#39; -eend &quot;$(readlink -f &quot;$1&quot;)&quot;; }
+fs(){ osascript -e&#39;set l to{}&#39; -e&#39;tell app&quot;finder&quot;to repeat with f in(get selection)&#39; -e&#39;set end of l to posix path of(f as alias)&#39; -eend -e&#39;set text item delimiters to linefeed&#39; -e&#39;l as text&#39;; }
+itt(){ osascript -e&#39;set text item delimiters to linefeed&#39; -e&#39;tell app&quot;itunes&quot;&#39; -e&#39;set l to{}&#39; -e&#39;repeat with t in(get selection)&#39; -e&#39;set end of l to posix path of(get location of t)&#39; -eend -eend -e&#39;l as text&#39;; }
+cf(){ cd &quot;$(osascript -e&#39;tell app&quot;finder&quot;to posix path of(insertion location as alias)&#39;)&quot;; }
+quit(){ osascript -e&#39;on run a&#39; -e&#39;repeat with x in a&#39; -e&#39;quit app x&#39; -eend -eend &quot;$@&quot;; }
+qo(){ local x;for x;do quit &quot;$f&quot;;open -Fa&quot;$x&quot;;done; }</code></pre>
+<h2>Single line examples</h2>
+<pre><code>(path to frontmost application) is (path to application &quot;Mail&quot;)
+(time to GMT) / 3600 -- UTC offset
+1 as meters as feet -- feet 3.280839895013
+100 as degrees fahrenheit as degrees celsius -- degrees Celsius 37.777777777778
+11 div 2 -- 5 (integer division)
+4 mod 3 -- 1
+AppleScript version of (system info)
+DNS form of host of (&quot;http://google.com&quot; as URL) -- &quot;google.com&quot;
+POSIX file (do shell script &quot;x=&quot; &amp; quoted form of &quot;file:///Library/User%20Pictures&quot; &amp; &quot;;x=${x/#file:\\/\\/};printf ${x//%/\\\\x}&quot;) -- file &quot;Macintosh HD:Library:User Pictures&quot;
+POSIX path of ((path to me as text) &amp; &quot;::&quot;) -- get the folder that contains the current script
+POSIX path of (path to home folder as text) is (system attribute &quot;HOME&quot;) &amp; &quot;/&quot; -- true
+POSIX path of (path to temporary items) -- same as `(system attribute &quot;TMPDIR&quot;) &amp; &quot;TemporaryItems/&quot;`
+application &quot;TextEdit&quot; is running
+character ID 97 -- &quot;a&quot; (`ASCII character` has been deprecated)
+choose file name default name &quot;Untitled.scpt&quot; default location (path to scripts folder as alias)
+choose file of type &quot;public.jpeg&quot; with invisibles
+choose from list {&quot;a&quot;, &quot;b&quot;} with title &quot;Title&quot; with prompt &quot;Prompt&quot; OK button name &quot;ok&quot; cancel button name &quot;cancel&quot; default items {&quot;a&quot;} with multiple selections allowed
+class of (&quot;&quot; as Unicode text) -- text (`Unicode text` and `string` have been synonymous with `text` since AppleScript 2.0)
+clipboard info -- show different versions of the clipboard
+count references of o is 1 -- test if `o` is a reference object (`class of o` returns the class of the referred object if `o` is a reference object)
+date &quot;12/31/2013 11:59 PM&quot; -- create a date object (this results in an error if the British region is selected from System Preferences)
+display dialog &quot;&quot; default answer &quot;&quot; buttons {&quot;a&quot;, &quot;b&quot;, &quot;c&quot;} default button 3 cancel button 1
+display notification &quot;text&quot; with title &quot;title&quot; subtitle &quot;subtitle&quot;
+do shell script &quot;MouseTools -x 500 -y 500;MouseTools -leftClick&quot; -- `tell app &quot;System Events&quot; to click at {500, 500}` stopped working in 10.9
+do shell script &quot;lsappinfo visibleProcessList|cut -d\\\&quot; -f4&quot; -- print the name of the second frontmost application in 10.9 and later
+do shell script &quot;pwd&quot; -- &quot;/&quot; (the default working directory for `do shell script` is the root directory and not the home directory)
+get eof of POSIX file &quot;/tmp/a&quot; -- get the size of a file in bytes
+id of &quot;aあ&quot; -- {97, 12354}
+id of &quot;»&quot; -- 187
+if result of (do shell script &quot;f=${TMPDIR}lastrun;find $f -mtime +5m;touch $f&quot;) is not &quot;&quot; then return
+log &quot;message&quot; -- add a message to the event log in Script Editor
+middle item of {1, 2, 3} -- 2
+month of (current date) as integer
+open location &quot;dict:///word&quot;
+paragraphs of &quot;aa\nbb\n&quot; -- {&quot;aa&quot;, &quot;bb&quot;, &quot;&quot;}
+paragraphs of text 1 thru -2 of &quot;aa\nbb\n&quot; -- {&quot;aa&quot;, &quot;bb&quot;}
+path to me -- return the location of a script
+path to resource &quot;Mail.icns&quot; in bundle (path to application &quot;Mail&quot;)
+quote of AppleScript -- &quot;\&quot;&quot; (`quote` is a property of the AppleScript object and not a constant)
+random number from 1 to 10
+read &quot;/tmp/a&quot; as «class utf8» using delimiter linefeed -- get the lines of a file as a list
+reverse of characters of &quot;esrever&quot; as text -- &quot;reverse&quot;
+run script file &quot;script.scpt&quot; with parameters {&quot;arg1&quot;, &quot;arg2&quot;}
+say &quot;[[rate 180]]a[[slnc 1000]]b&quot; using &quot;Victoria&quot; saving to &quot;/tmp/a.aif&quot;
+set the clipboard to (read (POSIX file &quot;/Library/Desktop Pictures/Abstract.jpg&quot;) as JPEG picture) -- set the clipboard to image data
+set the clipboard to POSIX file &quot;/Library/Desktop Pictures/Abstract.jpg&quot; -- set the clipboard to a file (this only works with a single file or folder and not with a list of files or folders)
+set volume output volume ((output volume of (get volume settings)) + 2) -- increase volume by 2%
+set volume with output muted
+system attribute &quot;USER&quot; -- same as `short user name of (system info)`
+system attribute -- list the names of environment variables
+tell application &quot;Alfred 2&quot; to search &quot;query&quot;
+tell application &quot;Calendar&quot; to delete events of calendars whose start date &lt; date &quot;12/31/2012&quot;
+tell application &quot;Contacts&quot; to name of people
+tell application &quot;Contacts&quot; to value of email 1 of people
+tell application &quot;FastScripts&quot; to display message &quot;message&quot; dismissing after delay 5
+tell application &quot;FastScripts&quot; to shortcut string of keyboard shortcut of some script item whose has keyboard shortcut is true
+tell application &quot;Finder&quot; to POSIX path of (application file id &quot;com.apple.TextEdit&quot; as alias) -- this is an alternative to `POSIX path of path to app &quot;TextEdit&quot;` that doesn&#39;t open TextEdit
+tell application &quot;Finder&quot; to default application of (info for POSIX file &quot;/Library/Desktop Pictures/Abstract.jpg&quot;)
+tell application &quot;Finder&quot; to disks whose ejectable is true and local volume is true and physical size &lt; 1e9
+tell application &quot;Finder&quot; to duplicate items of home to disk &quot;diskname&quot; with exact copy -- this is like `cp -Ra ~/ /Volumes/diskname` (most metadata is preserved by default but `with exact copy` also preserves permissions and ownership)
+tell application &quot;Finder&quot; to duplicate selection to desktop replacing yes
+tell application &quot;Finder&quot; to eject disks whose name is not &quot;MobileBackups&quot;
+tell application &quot;Finder&quot; to empty trash if free space of startup disk &lt; 1e10
+tell application &quot;Finder&quot; to files of (path to preferences folder) whose modification date &lt; ((current date) - (days * 14))
+tell application &quot;Finder&quot; to items of home
+tell application &quot;Finder&quot; to make new Finder window to (get target of Finder window 1) -- duplicate a window
+tell application &quot;Finder&quot; to make new Finder window to trash -- open a window for the trash
+tell application &quot;Finder&quot; to make new alias file at desktop to POSIX file &quot;/tmp&quot;
+tell application &quot;Finder&quot; to make new file at desktop with properties {name:&quot;file.txt&quot;, comment:&quot;file&quot;}
+tell application &quot;Finder&quot; to make new internet location file at desktop to &quot;http://apple.com&quot; with properties {name:&quot;Apple&quot;}
+tell application &quot;Finder&quot; to move items of desktop to trash
+tell application &quot;Finder&quot; to reveal item 1 of (sort selection by modification date) -- select the newest file in a selection with multiple files
+tell application &quot;Finder&quot; to select (items of (insertion location as alias) whose kind is (get kind of item 1 of (get selection)))
+tell application &quot;Finder&quot; to set collapsed of window of desktop to not collapsed of window of desktop -- toggle hiding the desktop
+tell application &quot;Finder&quot; to set label index of entire contents of (path to downloads folder) to 0
+tell application &quot;Finder&quot; to set label index of item 1 of (get selection) to item 1 of {2, 1, 3, 6, 4, 5, 7}
+tell application &quot;Finder&quot; to set selection to (get items of container of item 1 of (get selection) whose label index is (get label index of item 1 of (get selection)))
+tell application &quot;Finder&quot; to set selection to (make new file at (get insertion location) with properties {name:(text returned of (display dialog &quot;&quot; default answer &quot;Untitled.txt&quot;))})
+tell application &quot;Finder&quot; to set selection to make new file at (get insertion location)
+tell application &quot;Finder&quot; to set sort column of list view options of window 1 to modification date column
+tell application &quot;Finder&quot; to set {bounds:{rest:{rest:{dtw, dth}}}} to window of desktop
+tell application &quot;Finder&quot; to set {current view of window 1, bounds of window 1, icon size of icon view options of window 1} to {icon view, bounds of window of desktop, 256}
+tell application &quot;Finder&quot; to sort files of (path to downloads folder) by creation date
+tell application &quot;Finder&quot; to tell icon view options of window 1 to set {icon size, arrangement} to {(icon size * 1.5), arranged by name}
+tell application &quot;Finder&quot; to tell item 1 of (get selection) to if class is alias file then original item
+tell application &quot;Finder&quot; to windows whose visible is true and floating is false and modal is false
+tell application &quot;Font Book&quot; to name of typefaces whose style name is &quot;Regular&quot;
+tell application &quot;Google Chrome&quot; to close active tab of window 1
+tell application &quot;Google Chrome&quot; to loading of tabs of windows contains true
+tell application &quot;Google Chrome&quot; to make new window with properties {mode:&quot;incognito&quot;}
+tell application &quot;Google Chrome&quot; to set active tab index of window 1 to 2
+tell application &quot;Google Chrome&quot; to tell active tab of window 1 to execute javascript &quot;o=&#39;&#39;;a=document.querySelectorAll(&#39;a&#39;);for(i=0;e=a[i];i++){o+=e.href+&#39;\\n&#39;};o&quot;
+tell application &quot;Google Chrome&quot; to tell window 1 to close tabs whose id is not (get id of active tab)
+tell application &quot;Mail&quot; to make new outgoing message with properties {subject:&quot;subject&quot;, content:&quot;content&quot;, visible:true}
+tell application &quot;Mail&quot; to move selected messages of message viewer 1 to mailbox &quot;[Gmail]/Archive&quot; of account &quot;Gmail&quot;
+tell application &quot;Mail&quot; to properties of item 1 of (get selected messages of message viewer 1)
+tell application &quot;Mail&quot; to tell account &quot;Gmail&quot; to move (a reference to (messages of mailbox &quot;INBOX&quot; whose flagged status is false and read status is true)) to mailbox &quot;[Gmail]/Archive&quot;
+tell application &quot;Mail&quot; to tell account 1 to messages of mailbox &quot;INBOX&quot; whose date sent &lt; (current date) - 14 * days
+tell application &quot;Messages&quot; to log in -- log in to all services
+tell application &quot;Messages&quot; to send &quot;message&quot; to buddy &quot;buddy&quot; of service &quot;E:name@example.com&quot;
+tell application &quot;Numbers&quot; to make new document with properties {document template:template &quot;Blank&quot;}
+tell application &quot;Numbers&quot; to tell table 1 of sheet 1 of document 1 to set value of cell 1 of column 1 to &quot;a&quot;
+tell application &quot;Pages&quot; to select insertion point after character 7 of body text of document 1
+tell application &quot;QuickTime Player&quot; to tell (new screen recording) to start
+tell application &quot;Safari&quot; make new document with properties {URL:&quot;about:blank&quot;} -- open a new window
+tell application &quot;Safari&quot; to (do JavaScript &quot;document.readyState&quot; in document 1) is &quot;complete&quot;
+tell application &quot;Safari&quot; to (do JavaScript &quot;document.readyState&quot; in tabs of window 1) contains &quot;loading&quot;
+tell application &quot;Safari&quot; to (documents whose name is not &quot;Untitled&quot;) is not {}
+tell application &quot;Safari&quot; to close current tab of window 1
+tell application &quot;Safari&quot; to close tabs of window 1 whose URL does not contain &quot;substring&quot;
+tell application &quot;Safari&quot; to close tabs of window 1 whose name is &quot;Untitled&quot;
+tell application &quot;Safari&quot; to do JavaScript &quot;&#39;&#39;+document.getSelection()&quot; in document 1
+tell application &quot;Safari&quot; to do JavaScript &quot;document.body.innerHTML&quot; in document 1
+tell application &quot;Safari&quot; to do JavaScript &quot;document.getElementById(&#39;someid&#39;).childNodes[0].click()&quot; in document 1
+tell application &quot;Safari&quot; to make new document -- open a new window
+tell application &quot;Safari&quot; to tell (documents whose name is &quot;Failed to open page&quot;) to do JavaScript &quot;window.location.reload()&quot;
+tell application &quot;Safari&quot; to tell (window 1 whose its document is not missing value) to set current tab to make new tab
+tell application &quot;Safari&quot; to tell document 1 to do JavaScript &quot;window.scrollBy(0,window.innerHeight)&quot; -- scroll one page down
+tell application &quot;Safari&quot; to tell document 1 to set URL to &quot;http://web.archive.org/*/&quot; &amp; URL
+tell application &quot;Safari&quot; to tell document 1 to set the clipboard to &quot;[&quot; &amp; name &amp; &quot;](&quot; &amp; URL &amp; &quot;)&quot;
+tell application &quot;Safari&quot; to tell window 1 set current tab to tab ((index of current tab) + 1)
+tell application &quot;Safari&quot; to tell window 1 to close tabs whose index &gt; (get index of current tab)
+tell application &quot;Safari&quot; to tell window 1 to set current tab to tab -1
+tell application &quot;Safari&quot; to tell window 1 to set current tab to tab 1 whose URL contains &quot;substring&quot;
+tell application &quot;Script Editor to contents of selection of document 1
+tell application &quot;Script Editor&quot; to set bounds of windows to {0, 0, 1919, 1279}
+tell application &quot;Skim&quot; to index of current page of document 1
+tell application &quot;Skim&quot; to selection of document 1 as text
+tell application &quot;Skim&quot; to tell (notes of document 1 whose (its type is highlight note)) to its text
+tell application &quot;Spotify&quot; to play track &quot;spotify:track:&quot; &amp; trackid
+tell application &quot;System Events&quot; to POSIX path of disk items of folder &quot;~/Documents&quot;
+tell application &quot;System Events&quot; to URL of (POSIX file &quot;/Library&quot; as alias) -- file:///Library/
+tell application &quot;System Events&quot; to click (button 1 whose subrole is &quot;AXZoomButton&quot;) of (window 1 whose subrole is &quot;AXStandardWindow&quot;) of (process 1 whose frontmost is true)
+tell application &quot;System Events&quot; to click UI element 1 of menu bar 2 of process &quot;SystemUIServer&quot; whose accessibility description is &quot;spotlight menu&quot;
+tell application &quot;System Events&quot; to click window 1 of process &quot;Notification Center&quot;
+tell application &quot;System Events&quot; to exists process &quot;Finder&quot;
+tell application &quot;System Events&quot; to localized string &quot;Services&quot; from table &quot;Services&quot; in bundle &quot;/System/Library/Frameworks/AppKit.framework/Versions/Current&quot;
+tell application &quot;System Events&quot; to make new login item at end with properties {path:&quot;/Applications/TextEdit.app&quot;, name:&quot;TextEdit&quot;, hidden:true}
+tell application &quot;System Events&quot; to name of processes whose background only is false
+tell application &quot;System Events&quot; to picture of current desktop
+tell application &quot;System Events&quot; to properties of desktops
+tell application &quot;System Events&quot; to set frontmost of process 1 whose unix id is 1234 to true
+tell application &quot;System Events&quot; to set picture of desktops to &quot;/Library/Desktop Pictures/Antelope Canyon.jpg&quot;
+tell application &quot;System Events&quot; to set value of scroll bar 1 of scroll area 1 of group 1 of group 1 of group -1 of window 1 of process &quot;Safari&quot; to 1.0
+tell application &quot;System Events&quot; to set visible of processes whose bundle identifier is not &quot;my.emacs&quot; and name is not &quot;Safari&quot; to false
+tell application &quot;System Events&quot; to tell (process 1 whose frontmost is true) to perform action &quot;AXRaise&quot; of (window 1 whose value of attribute &quot;AXMain&quot; is true)
+tell application &quot;System Events&quot; to tell (process 1 whose frontmost is true) to value of attribute &quot;AXDocument&quot; of window 1
+tell application &quot;System Events&quot; to tell (process 1 whose it is frontmost) to tell (window 1 whose value of attribute &quot;AXMain&quot; is true) to value of attribute &quot;AXTitle&quot;
+tell application &quot;System Events&quot; to tell contents of property list file &quot;/tmp/a.plist&quot; to make new property list item at end with properties {kind:string, name:&quot;key&quot;, value:&quot;value&quot;}
+tell application &quot;System Events&quot; to tell current location of network preferences to tell (a reference to (service 1 whose kind is 10)) to if exists then connect
+tell application &quot;System Events&quot; to tell dock preferences to set autohide to not autohide
+tell application &quot;System Events&quot; to tell process &quot;Dock&quot; to click (UI elements of list 1 whose role description is &quot;minimized window&quot;)
+tell application &quot;System Events&quot; to tell process &quot;Dock&quot; to perform action &quot;AXShowMenu&quot; of UI element &quot;System Preferences&quot; of list 1
+tell application &quot;System Events&quot; to tell process &quot;Finder&quot; to class of UI elements of window 1
+tell application &quot;System Events&quot; to tell process &quot;Finder&quot; to rows of outline 1 of scroll area 1 of splitter group 1 of window 1 whose selected is true
+tell application &quot;System Events&quot; to tell process &quot;Finder&quot; to tell menu 1 of menu bar item 3 of menu bar 1 to click (menu item 1 whose name starts with &quot;Compress&quot;)
+tell application &quot;System Events&quot; to tell process &quot;Finder&quot; to value of attribute &quot;AXMenuItemCmdModifiers&quot; of menu item &quot;New Folder&quot; of menu 1 of menu bar item 3 of menu bar 1
+tell application &quot;System Events&quot; to tell process &quot;Notification Center&quot; to click (button &quot;Close&quot; of windows whose subrole is &quot;AXNotificationCenterAlert&quot; or subrole is &quot;AXNotificationCenterBanner&quot;)
+tell application &quot;System Events&quot; to tell process &quot;Notification Center&quot; to click menu bar item 1 of menu bar 1
+tell application &quot;System Events&quot; to tell process &quot;Preview&quot; to has scripting terminology
+tell application &quot;System Events&quot; to tell process &quot;QuickTime Player&quot; to set value of attribute &quot;AXFullScreen&quot; of window 1 to true
+tell application &quot;System Events&quot; to tell process &quot;Safari&quot; to value of attribute &quot;AXFullScreen&quot; of window 1
+tell application &quot;System Events&quot; to tell process &quot;Safari&quot; to value of text field 1 of group 2 of toolbar 1 of window 1 -- contents of the location bar
+tell application &quot;System Events&quot; to tell process &quot;TextEdit&quot; to value of attribute &quot;AXSelectedTextRange&quot; of text area 1 of scroll area 1 of window 1
+tell application &quot;System Events&quot; to tell process &quot;iTunes&quot; to click ((button 1 of window 1) whose description is &quot;close button&quot;)
+tell application &quot;System Events&quot; to tell property list file &quot;~/Library/Preferences/com.apple.recentitems.plist&quot; to properties of property list item &quot;RecentDocuments&quot;
+tell application &quot;System Events&quot; to tell security preferences to set require password to wake to not require password to wake
+tell application &quot;System Events&quot; to tell window 1 of (process 1 whose it is frontmost) to set {position, size} to {{0, 22}, {1920, 1258}}
+tell application &quot;System Events&quot; to |persistent-apps| of (get value of contents of property list file ((path to preferences folder as text) &amp; &quot;com.apple.dock.plist&quot;))
+tell application &quot;System Preferences&quot; to anchors of panes
+tell application &quot;System Preferences&quot; to reveal anchor &quot;Privacy_Assistive&quot; of pane id &quot;com.apple.preference.security&quot;
+tell application &quot;System Prefereneces&quot; to anchors of tabs
+tell application &quot;Terminal&quot; to do script &quot;&quot; -- open a new window
+tell application &quot;Terminal&quot; to set current settings of selected tab of window 1 to settings set &quot;Grass&quot;
+tell application &quot;Terminal&quot; to tell window 1 to set {number of columns, number of rows} to {80, 50}
+tell application &quot;TextEdit&quot; to attribute runs of text of document 1 whose font contains &quot;Bold&quot;
+tell application &quot;TextEdit&quot; to if number of windows is 0 then open POSIX file ((system attribute &quot;HOME&quot;) &amp; &quot;/Notes/temp.txt&quot;) as text
+tell application &quot;TextEdit&quot; to set color of characters 5 thru 10 of document 1 to {65535, 0, 0}
+tell application &quot;TextEdit&quot; to tell document 1 to copy word 1 to before paragraph 3
+tell application &quot;Twitter&quot; to text of item 1 of statuses of home timeline of current account
+tell application &quot;VLC&quot; to set current time to current time + 60
+tell application &quot;VLC&quot; to set fullscreen mode to not full screen mode
+tell application &quot;http://blogname.wordpress.com/xmlrpc.php&quot; to call xmlrpc {method name:&quot;wp.getPosts&quot;, parameters:{&quot;1&quot;, &quot;username&quot;, &quot;pa55w0rd&quot;, &quot;1&quot;}}
+tell application &quot;iTerm&quot; to tell (make new terminal) to tell (make new session at end of sessions) to exec command &quot;emacs&quot;
+tell application &quot;iTerm&quot; to tell session -1 of current terminal to write text &quot;say a&quot;
+tell application &quot;iTerm&quot; to text of current session of current terminal -- `terminal 1` is the terminal that was opened first and not always the current terminal
+tell application &quot;iTunes&quot; to POSIX path of (get location of current track)
+tell application &quot;iTunes&quot; to current playlist -- the playlist of the currently playing track
+tell application &quot;iTunes&quot; to delete (tracks of current playlist whose album is (get album of current track))
+tell application &quot;iTunes&quot; to delete playlists whose size is 0 and special kind is none -- delete empty playlists
+tell application &quot;iTunes&quot; to delete tracks of current playlist whose rating is 0 and index &lt; (get index of current track)
+tell application &quot;iTunes&quot; to duplicate current track to playlist &quot;Favorites&quot;
+tell application &quot;iTunes&quot; to location of tracks whose kind is &quot;AAC audio file&quot;
+tell application &quot;iTunes&quot; to make new user playlist with properties {name:&quot;name&quot;}
+tell application &quot;iTunes&quot; to name of tracks of source 1 whose artist contains &quot;substring&quot;
+tell application &quot;iTunes&quot; to play (track 1 of current playlist whose artist is not (get artist of current track) and index &gt; (get index of current track))
+tell application &quot;iTunes&quot; to refresh selection -- update the tags of the selected items if the tags have been edited outside iTunes
+tell application &quot;iTunes&quot; to reveal current track -- same as command-L
+tell application &quot;iTunes&quot; to set player position to (duration of current track) / 2
+tell application &quot;iTunes&quot; to set player position to player position + 30
+tell application &quot;iTunes&quot; to set view of browser window 1 to (get user playlist 1 whose special kind is none)
+tell application &quot;iTunes&quot; to tell current track to artist &amp; &quot; - &quot; &amp; name
+tell application &quot;iTunes&quot; to tracks of current playlist whose rating is 20
+tell application &quot;iTunes&quot; to tracks of playlist &quot;some playlist&quot; whose played count is not 0
+tell application &quot;iTunes&quot; to view of browser window 1 -- get the currently shown playlist or other view
+tell application &quot;loginwindow&quot; to «event aevtrlgo» -- log out without showing a confirmation dialog
+tell application &quot;loginwindow&quot; to «event aevtrsdn» -- open the dialog that is shown when pressing a power button or key
+tell application (path to frontmost application as text) to POSIX file (path of document 1) as text
+tell application (path to frontmost application as text) to quit saving no
+tell application (path to frontmost application as text) to set the clipboard to (get path of document 1)
+{1, 2} &amp; {3} -- {1, 2, 3}
+«data utxt3042» as text -- &quot;あ&quot;</code></pre>
+<h2>Scripts</h2>
+<h3>Applications/Finder/add iTunes playlist.scpt</h3>
+<pre><code>tell application &quot;Finder&quot;
+    set s to selection as alias list
+    set n to name of item 1 of s
+end tell
+tell application &quot;iTunes&quot;
+    if number of s is 1 then
+        set p to make new user playlist with properties {name:n}
+    else
+        set p to make new user playlist
+    end if
+    set view of browser window 1 to p
+    try -- this sometimes times out
+        add s to p
+        reveal item 1 of p
+        activate
+    end try
+end tell</code></pre>
+<h3>Applications/Finder/copy paths.scpt</h3>
+<pre><code>tell application &quot;Finder&quot; to set s to selection as alias list
+if s is {} then return
+set out to {}
+repeat with f in s
+    set end of out to POSIX path of f
+end repeat
+set text item delimiters to linefeed
+set the clipboard to (out as text)</code></pre>
+<h3>Applications/Finder/reset view options.scpt</h3>
+<pre><code>tell application &quot;Finder&quot;
+    if number of Finder windows is 0 then return
+    tell Finder window 1
+        set toolbar visible to false
+        set sidebar width to 0
+        set statusbar visible to false
+        set current view to column view
+        set bounds to {960, 22, 1920, 1076}
+        tell its column view options
+            set shows icon to false
+        end tell
+    end tell
+end tell</code></pre>
+<h3>Applications/Safari/close to left.scpt</h3>
+<pre><code>tell application &quot;Safari&quot; to tell window 1 to close (tabs where index ≤ (get index of current tab))</code></pre>
+<h3>Applications/Safari/close to right.scpt</h3>
+<pre><code>tell application &quot;Safari&quot; to tell window 1 to close (tabs where index ≥ (get index of current tab))</code></pre>
+<h3>Applications/Safari/copy all.scpt</h3>
+<pre><code>set text item delimiters to linefeed
+tell application &quot;Safari&quot; to URL of tabs of window 1
+set the clipboard to result as text</code></pre>
+<h3>Applications/Safari/copy url.scpt</h3>
+<pre><code>tell application &quot;Safari&quot; to set u to URL of document 1
+set the clipboard to u</code></pre>
+<h3>Applications/Safari/open web archive.scpt</h3>
+<pre><code>tell application &quot;Safari&quot; to tell document 1 to set URL to &quot;http://web.archive.org/*/&quot; &amp; URL</code></pre>
+<h3>Applications/Safari/select first tab.scpt</h3>
+<pre><code>tell window 1 of application &quot;Safari&quot; to set current tab to tab 1</code></pre>
+<h3>Applications/Safari/select last tab.scpt</h3>
+<pre><code>tell window 1 of application &quot;Safari&quot; to set current tab to tab -1</code></pre>
+<h3>Applications/Safari/translate.scpt</h3>
+<pre><code>tell application &quot;Safari&quot; to URL of document 1
+do shell script &quot;open &#39;http://translate.google.com/translate?sl=auto&amp;tl=auto&amp;u=&#39;$(jq -rR @uri&lt;&lt;&lt;&quot; &amp; quoted form of result &amp; &quot;)&quot;</code></pre>
+<h3>Applications/Script Editor/toggle comment.scpt</h3>
+<pre><code>set text item delimiters to linefeed
+tell application &quot;Script Editor&quot; to tell document 1
+    set input to its text
+    set {c1, c2} to character range of selection
+    if c1 is 0 then
+        set {p1, p2} to {1, 1}
+    else
+        set p1 to count paragraphs of text 1 thru c1 of input
+        set p2 to count paragraphs of text 1 thru c2 of input
+        if p1 is not p2 and {return, linefeed} contains item c2 of input then set p2 to p2 - 1
+    end if
+    set selection to paragraphs p1 thru p2
+    do shell script &quot;input=&quot; &amp; quoted form of (paragraphs p1 thru p2 of input as text) &amp; &quot;
+if [[ -z $(sed -E &#39;/^[[:space:]]*($|#|--)/d&#39; &lt;&lt;&lt; \&quot;$input\&quot;) ]]; then
+  sed -E &#39;s/^([[:space:]]*)(#|--)[[:space:]]*/\\1/g&#39; &lt;&lt;&lt; \&quot;$input\&quot;
+else
+  sed -E &#39;s/^([[:space:]]*)/\\1--/g&#39; &lt;&lt;&lt; \&quot;$input\&quot;
+fi&quot; without altering line endings
+    set contents of selection to result
+end tell</code></pre>
+<h3>Applications/iTunes/delete album from playlist.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    set x to track 1 of current playlist where album is not (get album of current track) and index &gt; (get index of current track)
+    delete (tracks of current playlist where album is (get album of current track))
+    if x is not missing value then
+        play x
+        reveal current track
+    end if
+end tell</code></pre>
+<h3>Applications/iTunes/edit tags.scpt</h3>
+<pre><code>set text item delimiters to {&quot; - &quot;}
+tell application &quot;iTunes&quot;
+    repeat with t in (get selection)
+        if name of t contains &quot; - &quot; then
+            set artist of t to text item 1 of (get name of t)
+            set name of t to (text items 2 thru -1 of (get name of t) as text)
+        end if
+    end repeat
+end tell
+
+on replace(x, y, z)
+    set text item delimiters to y
+    set ti to text items of x
+    set text item delimiters to z
+    ti as text
+end replace
+
+on split(x, y)
+    if x does not contain y then return {x}
+    set text item delimiters to y
+    text items of x
+end split
+
+on titlecase(x)
+    do shell script &quot;ruby -rtitlecase -e&#39;print ARGV[0].titlecase&#39; &quot; &amp; quoted form of x without altering line endings
+end titlecase
+
+on capitalize(x)
+    do shell script &quot;printf %s &quot; &amp; quoted form of x &amp; &quot;|tr A-Z a-z|gsed &#39;s/\\b./\\u&amp;/g&#39;&quot;
+end capitalize</code></pre>
+<h3>Applications/iTunes/move folders.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot; to location of selection
+tell application &quot;Finder&quot; to repeat with f in result
+    if exists folder of f then move folder of f to desktop
+end repeat</code></pre>
+<h3>Applications/iTunes/move to trash.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    repeat with t in (get selection)
+        set f to location of t
+        delete t
+        tell application &quot;Finder&quot; to move f to trash
+    end repeat
+end tell</code></pre>
+<h3>Applications/iTunes/next album.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    set t to (track 1 of current playlist where album is not (get album of current track) and index &gt; (get index of current track))
+    play t
+    reveal t
+end tell</code></pre>
+<h3>Applications/iTunes/open in last.fm.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot; to artist of current track
+do shell script &quot;open http://last.fm/music/$(ruby -rcgi -e&#39;print CGI.escape ARGV[0]&#39; &quot; &amp; quoted form of result &amp; &quot;)&quot;</code></pre>
+<h3>Applications/iTunes/preview tracks.scpt</h3>
+<pre><code>repeat
+    tell application &quot;iTunes&quot;
+        next track
+        set player position to 0.5 * (duration of current track)
+        play
+        delay 10
+    end tell
+end repeat</code></pre>
+<h3>Applications/iTunes/rating 0.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    repeat with t in (get selection)
+        set rating of t to 0
+    end repeat
+end tell</code></pre>
+<h3>Applications/iTunes/rating 1.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    repeat with t in (get selection)
+        set rating of t to 20
+    end repeat
+end tell</code></pre>
+<h3>Applications/iTunes/rating 2.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    repeat with t in (get selection)
+        set rating of t to 40
+    end repeat
+end tell</code></pre>
+<h3>Applications/iTunes/rating 3.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    repeat with t in (get selection)
+        set rating of t to 60
+    end repeat
+end tell</code></pre>
+<h3>Applications/iTunes/rating 4.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    repeat with t in (get selection)
+        set rating of t to 80
+    end repeat
+end tell</code></pre>
+<h3>Applications/iTunes/rating 5.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    repeat with t in (get selection)
+        set rating of t to 100
+    end repeat
+end tell</code></pre>
+<h3>Applications/iTunes/renumber tracks.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    set n to text returned of (display dialog &quot;Start from&quot; default answer &quot;1&quot;)
+    set s to selection
+    repeat with i from 1 to (count s)
+        set track number of item i of s to n + i - 1
+    end repeat
+end tell</code></pre>
+<h3>Applications/iTunes/tags from filenames.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    repeat with t in (get selection)
+        set n to name of t
+        set x to text items of text 4 thru -1 of n
+        set track number of t to text 1 thru 2 of n
+        set artist of t to item 1 of x
+        set name of t to item 2 of x
+    end repeat
+end tell</code></pre>
+<h3>Applications/iTunes/tags to filenames.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    repeat with t in (get selection)
+        set n to track number of t
+        set l to location of t
+        tell application &quot;Finder&quot; to set name of file l to (n &amp; &quot; &quot; &amp; name of t &amp; &quot;.aif&quot;) as text
+    end repeat
+end tell</code></pre>
+<h3>append to copied.scpt</h3>
+<pre><code>try
+    set old to the clipboard as record
+end try
+tell application &quot;System Events&quot; to keystroke &quot;c&quot; using command down
+delay 1
+do shell script &quot;printf \\\\n%s\\\\n \&quot;$(LC_CTYPE=UTF-8 pbpaste)\&quot;&gt;&gt;~/notes/copied&quot;
+try
+    set the clipboard to old
+end try</code></pre>
+<h3>iTunes delete and next.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    set t to current track
+    next track
+    play
+    reveal current track
+    delete t
+end tell</code></pre>
+<h3>iTunes go backward.scpt</h3>
+<pre><code>try
+    tell application &quot;iTunes&quot;
+        if player position &lt; 30 then
+            previous track
+        else
+            set player position to player position - 30
+        end if
+    end tell
+end try</code></pre>
+<h3>iTunes go down.scpt</h3>
+<pre><code>try
+    tell application &quot;iTunes&quot;
+        next track
+        set player position to 0.5 * (duration of current track)
+        reveal current track
+    end tell
+end try</code></pre>
+<h3>iTunes go forward.scpt</h3>
+<pre><code>try
+    tell application &quot;iTunes&quot;
+        set player position to player position + 30
+    end tell
+end try</code></pre>
+<h3>iTunes go up.scpt</h3>
+<pre><code>try
+    tell application &quot;iTunes&quot;
+        previous track
+        set player position to 0.5 * (duration of current track)
+        reveal current track
+    end tell
+end try</code></pre>
+<h3>iTunes star and next.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    set rating of current track to 20
+    next track
+    set player position to 0.5 * (duration of current track)
+    play
+    reveal current track
+end tell</code></pre>
+<h3>iTunes stars 0.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot; to set rating of current track to 0</code></pre>
+<h3>iTunes stars 1.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot; to set rating of current track to 20</code></pre>
+<h3>iTunes stars 2.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot; to set rating of current track to 40</code></pre>
+<h3>iTunes stars 3.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot; to set rating of current track to 60</code></pre>
+<h3>iTunes stars 4.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot; to set rating of current track to 80</code></pre>
+<h3>iTunes stars 5.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot; to set rating of current track to 100</code></pre>
+<h3>iTunes trash and next.scpt</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    set t to current track
+    set l to location of t
+    next track
+    play
+    reveal current track
+    delete t
+    tell application &quot;Finder&quot; to move l to trash
+end tell</code></pre>
+<h3>kill and reopen frontmost.scpt</h3>
+<pre><code>do shell script &quot;a=$(lsappinfo visibleProcessList|cut -d\\\&quot; -f2);killall \&quot;$a\&quot;;open -a \&quot;$a\&quot;&quot;</code></pre>
+<h3>kill frontmost.scpt</h3>
+<pre><code>do shell script &quot;kill $(lsappinfo info -app \&quot;$(lsappinfo front)\&quot; -only pid|cut -d= -f2)&quot;</code></pre>
+<h3>maximize.scpt</h3>
+<pre><code>try
+    tell application (path to frontmost application as text)
+        set bounds of window 1 to {0, 22, 1920, 1258}
+    end tell
+on error
+    tell application &quot;System Events&quot; to tell window 1 of (process 1 where it is frontmost)
+        try
+            set position to {0, 22}
+            set size to {1920, 1258}
+        end try
+    end tell
+end try</code></pre>
+<h3>note mode.scpt</h3>
+<pre><code>tell application (path to frontmost application as text)
+    set bounds of window 1 to {0, 23, 1100, 1079}
+end tell
+tell application &quot;TextEdit&quot;
+    open POSIX file ((system attribute &quot;HOME&quot;) &amp; &quot;/notes/textedit&quot;) as alias
+    set bounds of windows to {1100, 23, 1919, 1079}
+    activate
+end tell</code></pre>
+<h3>open recent or open with.scpt</h3>
+<pre><code>tell application &quot;System Events&quot; to tell (process 1 where it is frontmost)
+    tell menu bar item 3 of menu bar 1
+        click
+        repeat with x in {&quot;Open Recent&quot;, &quot;Open Recent File&quot;, &quot;Recent Projects&quot;, &quot;Open With&quot;}
+            if exists menu item x of menu 1 then
+                click menu item x of menu 1
+                exit repeat
+            end if
+        end repeat
+    end tell
+end tell</code></pre>
+<h3>reveal in Finder.scpt</h3>
+<pre><code>try
+    try
+        tell application (path to frontmost application as text)
+            set f to POSIX file («class ppth» of document 1) as text
+        end tell
+    on error
+        tell application &quot;System Events&quot; to tell (process 1 where frontmost is true)
+            value of attribute &quot;AXDocument&quot; of window 1
+        end tell
+        do shell script &quot;x=&quot; &amp; quoted form of result &amp; &quot;;x=${x/#file:\\/\\/};printf ${x//%/\\\\x}&quot;
+        set f to POSIX file result
+    end try
+    tell application &quot;Finder&quot;
+        select f
+        activate
+    end tell
+end try</code></pre>
+<h2>Notes</h2>
+<h3>Opening or activating applications</h3>
+<p>To open an application, you can usually send it a <code>reopen</code> command followed by an <code>activate</code> command:</p>
+<pre><code>tell application &quot;TextEdit&quot;
+    reopen
+    activate
+end tell</code></pre>
+<p><code>reopen</code> opens a new default window if there are no open windows, and if all windows are minimized, it unminimizes the first minimized window. <code>activate</code> makes the application frontmost.</p>
+<p>If for example TextEdit is not frontmost and has multiple open windows, <code>activate app &quot;TextEdit&quot;</code> and <code>tell app &quot;System Events&quot; to set frontmost of process &quot;TextEdit&quot; to true</code> raise all windows but <code>open -a TextEdit</code> only raises a single window.</p>
+<p>You can open TextEdit hidden and on the background by running <code>launch app &quot;TextEdit&quot;</code>, <code>do shell script &quot;pgrep -x TextEdit||open -jga TextEdit&quot;</code>, or <code>do shell script &quot;lsappinfo launch launchandhide=true nofront=true /Applications/TextEdit.app&quot;</code>. <code>launch app &quot;TextEdit&quot;</code> is blocked until TextEdit finishes opening but the other two commands are not.</p>
+<p>If TextEdit is running but has no open windows, <code>open -jga TextEdit</code> opens a new visible window on the background but <code>pgrep -xq TextEdit||open -jga TextEdit</code> does not.</p>
+<h3>Restoring text item delimiters</h3>
+<p>As far as I know, the <code>text item delimiters</code> property does not have to be restored if it is not used later in the same script.</p>
+<p>According to <a href="http://macscripter.net/viewtopic.php?id=24725">http://macscripter.net/viewtopic.php?id=24725</a>, when a script where the <code>text item delimiters</code> property was changed was run in one window in Script Editor, the <code>text item delimiters</code> property was also changed in other windows of Script Editor, but that has not been the case since at least 10.8. I don't know any other contexts where changing the <code>text item delimiters</code> property would have some more global effect outside the current script.</p>
+<h3>Basic IO</h3>
+<p>Read the contents of a file:</p>
+<pre><code>read &quot;/tmp/a&quot; as «class utf8»</code></pre>
+<p>Write text to a file:</p>
+<pre><code>set fd to open for access &quot;/tmp/a&quot; with write permission
+set eof fd to 0
+write &quot;a&quot; &amp; linefeed to fd as «class utf8»
+close access fd</code></pre>
+<p>Append text to a file:</p>
+<pre><code>set fd to open for access &quot;/tmp/a&quot; with write permission
+write &quot;a&quot; &amp; linefeed to fd as «class utf8» starting at eof
+close access fd</code></pre>
+<p>Get the lines of a file as a list:</p>
+<pre><code>read POSIX file &quot;/tmp/a&quot; as «class utf8» using delimiter linefeed</code></pre>
+<p>Get the size of a file in bytes:</p>
+<pre><code>get eof of &quot;/tmp/a&quot;</code></pre>
+<p>Make a file empty:</p>
+<pre><code>set fd to open for access &quot;/tmp/a&quot; with write permission
+set eof fd to 0
+close access fd</code></pre>
+<p>Create an empty file:</p>
+<pre><code>set fd to &quot;/tmp/a&quot;
+open for access fd
+close access fd</code></pre>
+<p>The <code>read</code> and <code>write</code> commands use an encoding like MacRoman or MacJapanese by default. <code>Unicode text</code> is UTF-16 and <code>«class utf8»</code> is UTF-8.</p>
+<h3>pbcopy and pbpaste encodings</h3>
+<p><code>pbcopy</code> and <code>pbpaste</code> do not preserve non-ASCII characters in the C locale or when the locale variables are unset. Terminal and iTerm 2 set the <code>LANG</code> locale variable to a value like <code>en_US.UTF-8</code> by default, where the <code>en_US</code> part depends on what region is selected from System Preferences, but the locale variables are unset by default in other places like in Script Editor and Automator.</p>
+<p>You can use <code>LC_CTYPE=UTF-8 pbcopy</code> or <code>LC_CTYPE=UTF-8 pbpaste</code> to always preserve non-ASCII characters in UTF-8 text:</p>
+<pre><code>do shell script &quot;printf %s Ā|pbcopy&quot;
+the clipboard -- &quot;ƒÄ&quot;
+set the clipboard to &quot;Ā&quot;
+do shell script &quot;pbpaste&quot; -- &quot;?&quot;
+do shell script &quot;printf %s Ā|LC_CTYPE=UTF-8 pbcopy&quot;
+the clipboard -- &quot;Ā&quot;
+do shell script &quot;LC_CTYPE=UTF-8 pbpaste&quot; -- &quot;Ā&quot;</code></pre>
+<p><code>LC_CTYPE</code> can be set to just <code>UTF-8</code>, but <code>LANG</code> and <code>LC_ALL</code> also have to include the language and territory parts, like <code>en_US.UTF-8</code> instead of just <code>UTF-8</code>.</p>
+<h3>CR line endings</h3>
+<p>Scripts written in Script Editor often contain a mix of CR and LF line endings. The return key always inserts a linefeed in Script Editor, but when a script is compiled, line endings are converted to carriage returns everywhere except inside strings and multi-line comments.</p>
+<p>The <code>do shell script</code> command replaces linefeeds with carriage returns by default. The <code>without altering line endings</code> specifier disables that, and it also disables chomping a newline from the end of the output.</p>
+<p>The string that is returned by <code>the clipboard as text</code> uses CR line endings, but you can do something like this to convert the line endings to LF:</p>
+<pre><code>set text item delimiters to linefeed
+(paragraphs of (get the clipboard as text)) as text</code></pre>
+<h3>echo in do shell script</h3>
+<p>The shell used by the <code>do shell script</code> command is <code>/bin/sh</code>, which is a POSIX-compliant version of Bash in OS X. When Bash is invoked as <code>sh</code>, the <code>xpg_echo</code> shell option is enabled by default, so the <code>echo</code> builtin interprets escape sequences and does not support any options:</p>
+<pre><code>(do shell script &quot;echo &quot; &amp; quoted form of &quot;\\t&quot;) is tab -- true
+do shell script &quot;echo -n a&quot; -- &quot;-n a&quot;</code></pre>
+<p>As a workaround, you can use <code>printf</code> or unset the <code>xpg_echo</code> option:</p>
+<pre><code>(do shell script &quot;printf %s &quot; &amp; quoted form of &quot;\\t&quot;) is tab -- false
+(do shell script &quot;shopt -u xpg_echo;echo &quot; &amp; quoted form of &quot;\\t&quot;) is tab -- false</code></pre>
+<h3>Passing input longer than ARG_MAX to do shell script</h3>
+<p>The maximum length of a command line is <code>2**18</code> bytes in OS X:</p>
+<pre><code>$ getconf ARG_MAX
+262144</code></pre>
+<p>Therefore this results in an error:</p>
+<pre><code>read &quot;/usr/share/dict/web2&quot; for 270000
+do shell script &quot;printf %s &quot; &amp; quoted form of result</code></pre>
+<p>You can use a temporary file as a workaround:</p>
+<pre><code>set input to read &quot;/usr/share/dict/web2&quot; for 270000
+set f to (system attribute &quot;TMPDIR&quot;) &amp; &quot;my.tempfile&quot;
+set fd to open for access f with write permission
+set eof fd to 0
+write input to fd as «class utf8»
+close access fd
+do shell script &quot;wc&lt;&quot; &amp; f &amp; &quot;;rm &quot; &amp; f</code></pre>
+<h3>UI scripting examples</h3>
+<pre><code>reopen application &quot;Finder&quot;
+tell application &quot;System Events&quot; to tell window 1 of process &quot;Finder&quot;
+    {class, value} of UI elements of UI elements
+    description of UI elements
+    properties of some UI element
+    attributes of some UI element
+    value of attribute &quot;AXFocused&quot; of some UI element
+    actions of button 2
+end tell</code></pre>
+<!---->
+
+
+<pre><code>tell application &quot;System Events&quot; to tell process &quot;Preview&quot;
+    repeat with w in (get windows where title contains &quot;pdf&quot;)
+        click (button 1 of w where description is &quot;close button&quot;)
+    end repeat
+end tell</code></pre>
+<!---->
+
+
+<pre><code>tell application &quot;System Events&quot; to tell process &quot;Finder&quot;
+    tell menu 1 of menu bar item &quot;File&quot; of menu bar 1
+        click menu item &quot;New Finder Window&quot;
+        click (menu item 1 where its name starts with &quot;Compress&quot;)
+    end tell
+    tell menu bar item &quot;File&quot; of menu bar 1
+        click
+        click menu item &quot;Open With&quot; of menu 1
+    end tell
+end tell</code></pre>
+<!---->
+
+
+<pre><code>tell application &quot;System Events&quot; to tell process &quot;SecurityAgent&quot;
+    set value of text field 2 of scroll area 1 of group 1 of window 1 to &quot;pa55word&quot;
+    click button 2 of group 2 of window 1
+end tell</code></pre>
+<!---->
+
+
+<pre><code>tell application &quot;System Events&quot; to tell process &quot;TextEdit&quot;
+    set frontmost to true
+    set e to exists window &quot;Fonts&quot;
+    if not e then keystroke &quot;t&quot; using command down
+    click menu button 1 of group 1 of group 2 of group 1 of splitter group 1 of window &quot;Fonts&quot;
+    click menu item &quot;Single&quot; of menu 1 of menu button 1 of group 1 of group 2 of group 1 of splitter group 1 of window &quot;Fonts&quot;
+    if not e then click button 1 of window &quot;Fonts&quot;
+end tell</code></pre>
+<h3>Reloading a page in Safari</h3>
+<p>This works if the page is loading and keeps the scroll position:</p>
+<pre><code>tell application &quot;Safari&quot; to tell document 1 to do JavaScript &quot;window.location.reload()&quot;</code></pre>
+<p>This does not work if the page is loading and does not keep the scroll position:</p>
+<pre><code>tell application &quot;Safari&quot; to tell document 1 to set URL to (get URL)</code></pre>
+<h3>Waiting until a page has finished loading in Safari</h3>
+<pre><code>tell application &quot;Safari&quot; to tell document 1
+    repeat until (do JavaScript &quot;document.readyState&quot;) is &quot;complete&quot;
+        delay 0.1
+    end repeat
+end tell</code></pre>
+<p>To run JavaScript after a page has finished loading, you can listen for the <code>load</code> event:</p>
+<pre><code>tell application &quot;Safari&quot; to tell document 1
+    do JavaScript &quot;window.addEventListener(&#39;load&#39;,function(){prompt(&#39;&#39;,&#39;&#39;)})&quot;
+end tell</code></pre>
+<h3>Waiting until a page has finished loading in Chrome</h3>
+<pre><code>tell application &quot;Google Chrome&quot; to tell active tab of window 1
+    repeat while loading is true
+        delay 0.1
+    end repeat
+end tell</code></pre>
+<h3>Different ways to check if a file or folder exists</h3>
+<p>System Events has an <code>exist</code> command:</p>
+<pre><code>tell application &quot;System Events&quot; to exists POSIX file &quot;/tmp/a&quot;</code></pre>
+<p>Finder also has an <code>exist</code> command:</p>
+<pre><code>tell application &quot;Finder&quot; to exists POSIX file &quot;/tmp/a&quot;</code></pre>
+<p>Coercing a file object into an alias fails if the file of the file object does not exist:</p>
+<pre><code>try
+    POSIX file &quot;/tmp/a&quot; as alias
+    true
+on error
+    false
+end try</code></pre>
+<h3>Getting command line arguments with osascript</h3>
+<p>Get all arguments as a list:</p>
+<pre><code>osascript -e&#39;on run a
+    a -- {&quot;xx&quot;, &quot;yy&quot;}
+end&#39; xx yy</code></pre>
+<p>Get a single argument:</p>
+<pre><code>osascript -e&#39;on run{a}
+    a -- &quot;xx&quot;
+end&#39; xx</code></pre>
+<p>Get all arguments as a list when using a HEREDOC:</p>
+<pre><code>osascript - xx yy &lt;&lt;&#39;END&#39;
+on run a
+    a -- {&quot;xx&quot;, &quot;yy&quot;}
+end
+END</code></pre>
+<h3>Getting STDIN with osascript</h3>
+<p>This stopped working in 10.8:</p>
+<pre><code>echo a|osascript -e&#39;do shell script&quot;cat&quot;&#39;</code></pre>
+<p>This also works in 10.8 and later:</p>
+<pre><code>echo a|osascript -e&#39;do shell script&quot;cat&lt;&amp;3&quot;&#39; 3&lt;&amp;0</code></pre>
+<h3>Getting a list of files as an alias list is faster than getting them as a list of Finder file objects</h3>
+<pre><code>$ TIMEFMT=%U
+$ time osascript -e&#39;tell app&quot;finder&quot;to files of(posix file&quot;/usr/bin/&quot;as alias)as alias list&#39;&gt;/dev/null
+5.832
+$ time osascript -e&#39;tell app&quot;finder&quot;to files of(posix file&quot;/usr/bin/&quot;as alias)as alias list&#39;&gt;/dev/null
+0.902
+$ time osascript -e&#39;tell app&quot;finder&quot;to files of(posix file&quot;/usr/bin/&quot;as alias)as alias list&#39;&gt;/dev/null
+0.902
+$ time osascript -e&#39;tell app&quot;finder&quot;to files of(posix file&quot;/usr/bin/&quot;as alias)&#39;&gt;/dev/null
+1.262
+$ time osascript -e&#39;tell app&quot;finder&quot;to files of(posix file&quot;/usr/bin/&quot;as alias)&#39;&gt;/dev/null
+1.310
+$ time osascript -e&#39;tell app&quot;finder&quot;to files of(posix file&quot;/usr/bin/&quot;as alias)&#39;&gt;/dev/null
+1.276</code></pre>
+<h3>Shuffling a list</h3>
+<p>This shuffles a list using the Fisher-Yates algorithm:</p>
+<pre><code>on shuffle(l)
+    set i to count of l
+    repeat while i ≥ 2
+        set j to random number from 1 to i
+        tell l to set {item i, item j} to {item j, item i}
+        set i to i - 1
+    end repeat
+    l
+end shuffle
+
+set l to {}
+repeat 1000 times
+    set end of l to random number from 1 to 1000
+end repeat
+shuffle(l)</code></pre>
+<p>When the length of the list is i, there are i * ... * 2 = i! possible sequences of random numbers, each of which corresponds to exactly one out of the i! permutations of the list.</p>
+<p>You can make the function faster by using a script object:</p>
+<pre><code>on shuffle(input)
+    script s
+        property l : input
+    end script
+    set i to count of l of s
+    repeat while i ≥ 2
+        set j to random number from 1 to i
+        set {item i of l of s, item j of l of s} to {item j of l of s, item i of l of s}
+        set i to i - 1
+    end repeat
+    l of s
+end shuffle</code></pre>
+<p>When I tested the two functions, they took about 0.06 and 0.04 seconds for a list with 100 elements, about 0.15 and 0.06 seconds for a list with 1000 elements, about 12 and 0.5 seconds for a list with 10000 elements, and about 976 seconds and 4 seconds for a list with 100000 elements.</p>
+<h3>The number of items that can be saved in a compiled script is limited</h3>
+<p>Try to open a new script window in Script Editor and run this:</p>
+<pre><code>set l to {}
+repeat with x from 1 to 10000
+    set end of l to x
+end repeat</code></pre>
+<p>If you then try to save the script as a compiled script, there is an error like <code>The document “Untitled” could not be saved as “Untitled.scpt”</code>. If you do not run the script, you can save it as a compiled script, but if you then run the script outside Script Editor, or for example with <code>osascript</code>, there is an error like <code>couldn't save changes to script test.scpt: Signaled when the runtime stack overflows</code>.</p>
+<p>As a workaround, you can save the script as an uncompiled script instead of a compiled script, add <code>set l to missing value</code> to the end of the script, or put the whole script inside a handler to make the <code>l</code> variable local.</p>
+<h3>Reference forms</h3>
+<p>The AppleScript Language Guide classifies reference forms under the ten types listed below. I added the examples.</p>
+<ul>
+<li>Arbitrary: <code>some item of</code></li>
+<li>Every: <code>every item</code>, <code>windows</code></li>
+<li>Filter: <code>tabs whose loading is true</code></li>
+<li>ID: <code>application id &quot;com.apple.finder&quot;</code>, <code>disk id -100</code></li>
+<li>Index: <code>character 1</code>, <code>last item</code>, <code>front window</code></li>
+<li>Middle: <code>middle item of {1, 2, 3}</code></li>
+<li>Name: <code>window named &quot;Untitled&quot;</code></li>
+<li>Property: <code>document 1's text</code>, <code>tell &quot;aa&quot; to length</code>, <code>a of {a:1}</code></li>
+<li>Range: <code>items 1 thru 3</code></li>
+<li>Relative: <code>item before item 3</code></li>
+</ul>
+<h3>Reference objects</h3>
+<pre><code>tell application &quot;TextEdit&quot;
+    open POSIX file &quot;/usr/share/dict/connectives&quot;
+    set r to a reference to document 1
+    open POSIX file &quot;/usr/share/dict/propernames&quot;
+
+    r -- document 1 of application &quot;TextEdit&quot;
+
+    --evaluate a reference object
+    contents of r -- document &quot;propernames&quot; of application &quot;TextEdit&quot;
+
+    --perform an implicit dereference
+    name of r -- &quot;propernames&quot;
+end tell</code></pre>
+<h3>Key codes</h3>
+<p>You can look up key codes from <code>Events.h</code>.</p>
+<pre><code>$ grep -a &#39;^  kVK&#39; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/Headers/Events.h|tr -d ,|while read x y z;do printf &#39;%d %s %s\n&#39; $z $z ${x#kVK_};done|sort -n
+0 0x00 ANSI_A
+1 0x01 ANSI_S
+2 0x02 ANSI_D
+3 0x03 ANSI_F
+4 0x04 ANSI_H
+5 0x05 ANSI_G
+6 0x06 ANSI_Z
+7 0x07 ANSI_X
+8 0x08 ANSI_C
+9 0x09 ANSI_V
+10 0x0A ISO_Section
+11 0x0B ANSI_B
+12 0x0C ANSI_Q
+13 0x0D ANSI_W
+14 0x0E ANSI_E
+15 0x0F ANSI_R
+16 0x10 ANSI_Y
+17 0x11 ANSI_T
+18 0x12 ANSI_1
+19 0x13 ANSI_2
+20 0x14 ANSI_3
+21 0x15 ANSI_4
+22 0x16 ANSI_6
+23 0x17 ANSI_5
+24 0x18 ANSI_Equal
+25 0x19 ANSI_9
+26 0x1A ANSI_7
+27 0x1B ANSI_Minus
+28 0x1C ANSI_8
+29 0x1D ANSI_0
+30 0x1E ANSI_RightBracket
+31 0x1F ANSI_O
+32 0x20 ANSI_U
+33 0x21 ANSI_LeftBracket
+34 0x22 ANSI_I
+35 0x23 ANSI_P
+36 0x24 Return
+37 0x25 ANSI_L
+38 0x26 ANSI_J
+39 0x27 ANSI_Quote
+40 0x28 ANSI_K
+41 0x29 ANSI_Semicolon
+42 0x2A ANSI_Backslash
+43 0x2B ANSI_Comma
+44 0x2C ANSI_Slash
+45 0x2D ANSI_N
+46 0x2E ANSI_M
+47 0x2F ANSI_Period
+48 0x30 Tab
+49 0x31 Space
+50 0x32 ANSI_Grave
+51 0x33 Delete
+53 0x35 Escape
+55 0x37 Command
+56 0x38 Shift
+57 0x39 CapsLock
+58 0x3A Option
+59 0x3B Control
+60 0x3C RightShift
+61 0x3D RightOption
+62 0x3E RightControl
+63 0x3F Function
+64 0x40 F17
+65 0x41 ANSI_KeypadDecimal
+67 0x43 ANSI_KeypadMultiply
+69 0x45 ANSI_KeypadPlus
+71 0x47 ANSI_KeypadClear
+72 0x48 VolumeUp
+73 0x49 VolumeDown
+74 0x4A Mute
+75 0x4B ANSI_KeypadDivide
+76 0x4C ANSI_KeypadEnter
+78 0x4E ANSI_KeypadMinus
+79 0x4F F18
+80 0x50 F19
+81 0x51 ANSI_KeypadEquals
+82 0x52 ANSI_Keypad0
+83 0x53 ANSI_Keypad1
+84 0x54 ANSI_Keypad2
+85 0x55 ANSI_Keypad3
+86 0x56 ANSI_Keypad4
+87 0x57 ANSI_Keypad5
+88 0x58 ANSI_Keypad6
+89 0x59 ANSI_Keypad7
+90 0x5A F20
+91 0x5B ANSI_Keypad8
+92 0x5C ANSI_Keypad9
+93 0x5D JIS_Yen
+94 0x5E JIS_Underscore
+95 0x5F JIS_KeypadComma
+96 0x60 F5
+97 0x61 F6
+98 0x62 F7
+99 0x63 F3
+100 0x64 F8
+101 0x65 F9
+102 0x66 JIS_Eisu
+103 0x67 F11
+104 0x68 JIS_Kana
+105 0x69 F13
+106 0x6A F16
+107 0x6B F14
+109 0x6D F10
+111 0x6F F12
+113 0x71 F15
+114 0x72 Help
+115 0x73 Home
+116 0x74 PageUp
+117 0x75 ForwardDelete
+118 0x76 F4
+119 0x77 End
+120 0x78 F2
+121 0x79 PageDown
+122 0x7A F1
+123 0x7B LeftArrow
+124 0x7C RightArrow
+125 0x7D DownArrow
+126 0x7E UpArrow</code></pre>
+<h3>JavaScript examples for scripts that run JavaScript in a browser</h3>
+<p>Get the <code>innerHTML</code> property of the <code>body</code> element:</p>
+<pre><code>document.body.innerHTML</code></pre>
+<p>Reload a page:</p>
+<pre><code>window.location.reload()</code></pre>
+<p>Get the URL of a page:</p>
+<pre><code>window.location.href</code></pre>
+<p>Get the text selection as a string:</p>
+<pre><code>&#39;&#39;+document.getSelection()</code></pre>
+<p>Change the value of an element:</p>
+<pre><code>document.getElementById(&#39;aa&#39;).value=&#39;bb&#39;</code></pre>
+<p>Make a list of the <code>href</code> attributes of links:</p>
+<pre><code>o=&#39;&#39;;a=document.links;for(i=0;e=a[i];i++)o+=e.href+&#39;\n&#39;;o</code></pre>
+<p>Scroll to the end of a page:</p>
+<pre><code>window.scroll(0,document.body.scrollHeight)</code></pre>
+<p>Scroll one page down:</p>
+<pre><code>window.scrollBy(0,window.innerHeight)</code></pre>
+<p>Remove <code>div</code> elements that have a <code>style</code> attribute:</p>
+<pre><code>a=document.querySelectorAll(&#39;div[style]&#39;);for(i=0;e=a[i];i++){e.parentNode.removeChild(e)}</code></pre>
+<p>Return the part after the first equals sign of a specified attribute of the element with a specified ID:</p>
+<pre><code>document.getElementById(&#39;aa&#39;).getAttribute(&#39;bb&#39;).replace(/^.*?=/,&#39;&#39;)</code></pre>
+<p>Click the element with the specified ID when the page has finished loading:</p>
+<pre><code>window.addEventListener(&#39;load&#39;,function(){document.getElementById(&#39;aa&#39;).click()})</code></pre>
+<p>Scroll the first element with the specified class into view and return the scroll position:</p>
+<pre><code>document.getElementsByClassName(&#39;aa&#39;)[0].scrollIntoView();window.scrollY</code></pre>
+<p>Add jQuery:</p>
+<pre><code>x=document.createElement(&#39;script&#39;);x.src=&#39;https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js&#39;;document.querySelector(&#39;head&#39;).appendChild(x)</code></pre>
+<h3>Date and time examples</h3>
+<pre><code>year of (current date)
+(current date) + 1 * days
+tell (current date) + 1 * days to set time to 0
+month of date &quot;12/31/2013&quot; as integer -- 12
+time of date &quot;12/31/2013 11:59:59 PM&quot; -- 86399
+time string of date &quot;12/31/2013 11:59:59 PM&quot; -- &quot;11:59:59 PM&quot;
+date &quot;12/31/2013&quot; as «class isot» -- «data isot323031332D31322D33315430303A30303A3030»</code></pre>
+<p><code>date &quot;12/31/2013&quot;</code> results in an error if the British region is selected from System Preferences and <code>date &quot;31/12/2013&quot;</code> results in an error if the U.S. region is selected from System Preferences. This works with all regions:</p>
+<pre><code>set d to current date
+tell d to set {year, month, date, time} to {2013, 12, 31, 0}
+d -- date &quot;Saturday, October 19, 2013 12:00:00 AM&quot;</code></pre>
+<p>This gets a date object for 9:00 AM today:</p>
+<pre><code>set d to current date
+set hours of d to 9
+set minutes of d to 0
+set seconds of d to 0
+d</code></pre>
+<h3>Two ways to get the path of the current document in the frontmost application</h3>
+<p>This did not work with Preview, TextMate 2, Sublime Text, or iChm:</p>
+<pre><code> tell application (path to frontmost application as text)
+     (path of document 1) as text
+ end tell</code></pre>
+<p>This did not work with Acorn:</p>
+<pre><code>tell application &quot;System Events&quot; to tell (process 1 where frontmost is true)
+    value of attribute &quot;AXDocument&quot; of window 1
+end tell
+do shell script &quot;x=&quot; &amp; quoted form of result &amp; &quot;;x=${x/#file:\\/\\/};printf ${x//%/\\\\x}&quot;</code></pre>
+<h3>Removing items whose files have been deleted from the iTunes library</h3>
+<pre><code>tell application &quot;iTunes&quot;
+    repeat with t in (get file tracks of library playlist 1)
+        if location of t is missing value then delete t
+    end repeat
+end tell</code></pre>
+<h3>Apple events for logging out, restarting, shutting down, and going to sleep</h3>
+<p>Log out after showing a confirmation dialog (<code>kAELogOut</code> or <code>logo</code>):</p>
+<pre><code>tell application &quot;System Events&quot; to log out</code></pre>
+<p>Restart after showing a confirmation dialog (<code>kAEShowRestartDialog</code> or <code>rrst</code>):</p>
+<pre><code>tell application &quot;loginwindow&quot; to «event aevtrrst»</code></pre>
+<p>Shut down after showing a confirmation dialog (<code>kAEShowShutdownDialog</code> or <code>rsdn</code>):</p>
+<pre><code>tell application &quot;loginwindow&quot; to «event aevtrsdn»</code></pre>
+<p>Log out without showing a confirmation dialog (<code>kAEReallyLogOut</code> or <code>rlgo</code>):</p>
+<pre><code>tell application &quot;loginwindow&quot; to «event aevtrlgo»</code></pre>
+<p>Restart without showing a confirmation dialog (<code>kAERestart</code> or <code>rest</code>):</p>
+<pre><code>tell application &quot;System Events&quot; to restart</code></pre>
+<p>Shut down without showing a confirmation dialog (<code>kAEShutDown</code> or <code>shut</code>):</p>
+<pre><code>tell application &quot;System Events&quot; to shut down</code></pre>
+<p>Go to sleep (<code>kAESleep</code> or <code>slep</code>):</p>
+<pre><code>tell application &quot;System Events&quot; to sleep</code></pre>
+<p>The four letter codes for Apple events are listed in <code>AERegistry.h</code> which you can open by running <code>open -h aeregistry.h</code>.</p>
+<h3>Changes in 10.9</h3>
+<p><code>osascript</code> is now a UI element process, so you can use for example <code>osascript -e'display dialog&quot;&quot;'</code> instead of <code>osascript -e'tell app(path to frontmost application as text)to display dialog&quot;&quot;'</code>.</p>
+<p>Persistent properties are not saved by default for AppleScript applications that use accessibility features.</p>
+<p>There is a new syntax for interleaved arguments for handlers. For example <code>on doThis_withThat_(a, b)</code> is compiled to <code>on doThis:a withThat:b</code>.</p>
+<p><code>NSAppleScriptEnabled</code> is set to true by default in Preview's <code>Info.plist</code>.</p>
+<h3>Sending a message with Mail</h3>
+<pre><code>tell application &quot;Mail&quot;
+    tell (make new outgoing message)
+        set subject to &quot;subject&quot;
+        set content to &quot;content&quot;
+        make new to recipient at end of to recipients with properties {address:&quot;name@example.com&quot;}
+        make new attachment with properties {file name:(POSIX file &quot;/tmp/a&quot;)} at after last paragraph
+        send
+    end tell
+end tell</code></pre>
+<h3>Registering an AppleScript application as a URL handler</h3>
+<p>Save this script as <code>/tmp/a.app</code> in Script Editor:</p>
+<pre><code>on open location x
+    say x
+end open location</code></pre>
+<p>Then run this command:</p>
+<pre><code>defaults write /tmp/a.app/Contents/Info.plist CFBundleURLTypes &#39;({CFBundleURLName=myurlscheme;CFBundleURLSchemes=(myurlscheme);})&#39;</code></pre>
+<p>The changes should be registered automatically within a few seconds, and then for example the URL <code>myurlscheme://?aa=bb</code> should be opened in your new application.</p>
+<h3>osacompile and osadecompile examples</h3>
+<p>Display a compiled script as text:</p>
+<pre><code>osadecompile file.scpt</code></pre>
+<p>Save the contents of the clipboard as a compiled script:</p>
+<pre><code>pbpaste|osacompile -o file.scpt</code></pre>
+<p>Convert uncompiled scripts to compiled scripts:</p>
+<pre><code>for f in *.applescript;do osacompile -o &quot;${f%applescript}scpt&quot; &quot;$f&quot;;done</code></pre>
+<p>Convert compiled scripts to uncompiled scripts:</p>
+<pre><code>for f in *.scpt;do osadecompile &quot;$f&quot;&gt;&quot;${f%scpt}applescript&quot;;done</code></pre>
+<p>Search and replace in multiple compiled scripts:</p>
+<pre><code>for f in ~/Library/Scripts/**/*.scpt;do osadecompile &quot;$f&quot;|tr \\r \\n|sed s/search/replace/g|osacompile -o &quot;$f&quot;;done</code></pre>
+<p>Generate a Markdown document for the contents of multiple compiled scripts:</p>
+<pre><code>for f in *.scpt;do printf %s\\n &quot;## $x&quot; &#39;&#39; &quot;$(osadecompile &quot;$x&quot;|tr \\r \\n|expand -t4|sed &#39;s/^/    /&#39;)&quot; &#39;&#39;;done</code></pre>
+<p><code>osacompile&gt;file.scpt</code> also creates an <code>a.scpt</code> file but <code>osacompile -o file.scpt</code> does not. <code>osadecompile</code> has no <code>-o</code> option.</p>
+<h3>Creating an application that receives dropped files as input</h3>
+<p>One option is to save a script like this as an application in Script Editor:</p>
+<pre><code>on open input
+    say POSIX path of item 1 of input
+end open</code></pre>
+<p>The script has to be saved as an application because scripts saved as <code>.scpt</code> or <code>.applescript</code> cannot receive dropped files as input.</p>
+<p>Another option is to use Automator to create an application with a Run AppleScript command like this:</p>
+<pre><code>on run {input, parameters}
+    say POSIX path of item 1 of input
+end run</code></pre>
+<p>Applications created with Automator can be selected from an Open With menu and be given files as an argument with <code>open -a</code> but applications created with Script Editor can not.</p>
+<h3>Revealing a list of files in Finder</h3>
+<pre><code>set l to {}
+read &quot;/tmp/a&quot; as «class utf8» using delimiter linefeed
+repeat with p in result
+    set end of l to POSIX file p
+end repeat
+tell application &quot;Finder&quot; to reveal l</code></pre>
+<h3>Making a list of today's calendar events</h3>
+<pre><code>set d to current date
+set hours of d to 0
+set minutes of d to 0
+set seconds of d to 0
+set out to &quot;&quot;
+tell application &quot;Calendar&quot; to tell calendar &quot;Calendar Name&quot;
+    repeat with e in (events where start date &gt;= d and start date &lt;= d + 86399)
+        set out to out &amp; time string of (get start date of e) &amp; &quot; &quot; &amp; time string of (get end date of e) &amp; &quot; &quot; &amp; summary of e &amp; linefeed
+    end repeat
+end tell</code></pre>
+<h3>Removing tracks whose title is contained in a text file from a playlist in iTunes</h3>
+<pre><code>set x to paragraphs of (read &quot;/tmp/a&quot; as «class utf8»)
+tell application &quot;iTunes&quot;
+    repeat with t in (get tracks of playlist &quot;playlist name&quot;)
+        if x contains name of t then delete t
+    end repeat
+end tell</code></pre>
+<h3>Making a new iTunes playlist for the tracks of a playlist where the name of the artist of the track is contained in a text file</h3>
+<pre><code>set l to {}
+set a to paragraphs of (read &quot;/tmp/artists&quot; as «class utf8»)
+tell application &quot;iTunes&quot;
+    repeat with t in (get tracks of playlist &quot;playlist name&quot;)
+        if a contains artist of t then set end of l to location of t
+    end repeat
+    add items of l to (make new user playlist)
+end tell</code></pre>
+<h3>Bugs</h3>
+<p>A multi-line comment that contains an odd number of double quotes (like <code>(* &quot; *)</code> or <code>(* &quot;&quot;&quot; *)</code>) results in an error.</p>
+<p>Since at least 10.6, when Script Editor's syntax highlighting settings have been changed, they occasionally revert to the default settings when for example Script Editor crashes.</p>
+<p>Since 10.8, a warning like <code>CFURLGetFSRef was passed this URL which has no scheme</code> is displayed when a relative path is converted to an alias in a script run with <code>osascript</code>.</p>
+<p>Since 10.9, changes to Finder's icon view options are not applied until for example the folder of the Finder window is changed to another folder and back.</p>
+<h3>Listing the URLs of tabs that have failed to load in Safari</h3>
+<p>If multiple tabs have failed to load in Safari but you cannot reload the tabs, you can use this script to make a list of the URLs (or the URL-like strings shown on the location bar that are sometimes not actually URLs) of all tabs of the frontmost window.</p>
+<pre><code>set out to &quot;&quot;
+tell application &quot;Safari&quot;
+    tell window 1 to repeat with t in (get tabs)
+        set current tab to t
+        tell application &quot;System Events&quot; to tell process &quot;Safari&quot;
+            value of text field 1 of group 2 of toolbar 1 of window 1
+            set out to out &amp; result &amp; linefeed
+        end tell
+    end repeat
+end tell</code></pre>
+<h2>Unsorted notes</h2>
+<pre><code>`open location &quot;http://ja.wikipedia.org/wiki/漢字&quot;` does not work but `do shell script &quot;open http://ja.wikipedia.org/wiki/漢字&quot;` does
+Script Editor replaces escape sequences like `\r` in strings with literal characters when a script is compiled by default, so you should often use properties like `return` instead
+you can insert code for System Events commands by recording UI events in Automator and then dragging the steps from the resulting Watch Me Do action to Script Editor
+10.9 came with AppleScript 2.3 and 10.8 came with AppleScript 2.2.2
+key code 123 is the left arrow key, 124 is right, 125 is down, and 126 is up
+if the `click` command does not work for selecting a UI element, you can try to use `perform action &quot;AXPress&quot;`, `set selected to true`, or `set focused to true`
+`tell app &quot;Finder&quot; to windows` includes view options windows and preferences windows but `tell app &quot;Finder&quot; to Finder windows` does not
+if the user presses a cancel button, `display dialog` throws an error but `choose from list` returns false
+only a few applications like Finder and BBEdit have ever supported recording AppleScript scripts
+`tell application &quot;Mail&quot; to path to application support from user domain` has returned a folder in Mail&#39;s sandbox container since 10.8
+an `open` handler is used by droplets and an `open location` handler is used when an application is set as a handler for a URL
+the `ASCII character` command of Standard Additions has been deprecated in favor of the `character ID` command
+the `ASCII number` command of Standard Additions has been deprecated in favor of the `id` property of System Events
+the `info for` command of Standard Additions has been deprecated in favor of the `properties` property of System Events
+`number` is a pseudo-property equivalent to `count`
+text objects have not contained style information since AppleScript 2.0
+FastScripts pauses a script before a `key code` or `keystroke` command until modifier keys are released
+`set volume output volume 50` and `set volume 3.5` both set the output volume to 50%
+you can use the Accessibility Inspector application inside XCode&#39;s application bundle to see information about UI elements
+`&quot;A&quot; is &quot;a&quot;` is true outside a `considering case` block</code></pre>
+<h2>Bookmarks</h2>
+<p><a href="https://developer.apple.com/library/mac/documentation/applescript/conceptual/applescriptlangguide/AppleScriptLanguageGuide.pdf">https://developer.apple.com/library/mac/documentation/applescript/conceptual/applescriptlangguide/AppleScriptLanguageGuide.pdf</a><br> <a href="http://www.cs.utexas.edu/~wcook/papers/AppleScript/AppleScript95.pdf">http://www.cs.utexas.edu/~wcook/papers/AppleScript/AppleScript95.pdf</a><br> <a href="http://www.cs.utexas.edu/~wcook/Drafts/2006/ashopl.pdf">http://www.cs.utexas.edu/~wcook/Drafts/2006/ashopl.pdf</a><br> <a href="http://dl.acm.org/ft_gateway.cfm?id=1238845&amp;type=pdf&amp;path=%2F1240000%2F1238845%2Fsupp%2FAppleScript%2Epdf&amp;supp=1&amp;dwn=1&amp;CFID=334275816&amp;CFTOKEN=16694215">http://dl.acm.org/ft_gateway.cfm?id=1238845&amp;type=pdf&amp;path=%2F1240000%2F1238845%2Fsupp%2FAppleScript%2Epdf&amp;supp=1&amp;dwn=1&amp;CFID=334275816&amp;CFTOKEN=16694215</a><br> <a href="http://www.apeth.net/matt/downloads/ASTDG2Scripts.txt">http://www.apeth.net/matt/downloads/ASTDG2Scripts.txt</a><br> <a href="http://developer.apple.com/library/mac/#technotes/tn2065/_index.html">http://developer.apple.com/library/mac/#technotes/tn2065/_index.html</a><br> <a href="http://developer.apple.com/library/mac/#releasenotes/AppleScript/RN-AppleScript/RN-10_5/RN-10_5.html">http://developer.apple.com/library/mac/#releasenotes/AppleScript/RN-AppleScript/RN-10_5/RN-10_5.html</a><br> <a href="http://macscripter.net/viewtopic.php?id=24737">http://macscripter.net/viewtopic.php?id=24737</a><br> <a href="http://macscripter.net/viewtopic.php?id=24587">http://macscripter.net/viewtopic.php?id=24587</a><br> <a href="http://support.apple.com/kb/HT5914">http://support.apple.com/kb/HT5914</a><br> <a href="http://macosxautomation.com/mavericks/guiscripting/index.html">http://macosxautomation.com/mavericks/guiscripting/index.html</a><br> <a href="https://developer.apple.com/library/mac/releasenotes/AppleScript/RN-AppleScript/RN-10_9/RN-10_9.html#//apple_ref/doc/uid/TP40000982-CH109-SW1">https://developer.apple.com/library/mac/releasenotes/AppleScript/RN-AppleScript/RN-10_9/RN-10_9.html#//apple_ref/doc/uid/TP40000982-CH109-SW1</a><br> <a href="http://macscripter.net/viewtopic.php?id=39019">http://macscripter.net/viewtopic.php?id=39019</a><br> <a href="https://discussions.apple.com/thread/1897143">https://discussions.apple.com/thread/1897143</a><br> <a href="http://stackoverflow.com/a/15820786">http://stackoverflow.com/a/15820786</a><br> <a href="https://developer.apple.com/library/mac/releasenotes/InterapplicationCommunication/RN-JavaScriptForAutomation/index.html">https://developer.apple.com/library/mac/releasenotes/InterapplicationCommunication/RN-JavaScriptForAutomation/index.html</a><br> <a href="https://developer.apple.com/library/mac/releasenotes/AppleScript/RN-AppleScript/RN-10_10/RN-10_10.html">https://developer.apple.com/library/mac/releasenotes/AppleScript/RN-AppleScript/RN-10_10/RN-10_10.html</a></p>

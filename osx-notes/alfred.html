@@ -1,0 +1,123 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name=viewport content=width=device-width,initial-scale=1>
+<style>
+* {
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+body {
+  font: 16px Georgia, serif;
+}
+pre, code {
+  font: 14px Menlo, 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+  white-space: pre-wrap;
+  background: #e5e5e5;
+}
+blockquote {
+  background: #e5e5e5;
+  margin-left: 0;
+  margin-right: 0;
+  border-left: 4px solid #aaa;
+  padding: 1em 0 1em 1em;
+}
+li p:first-child, blockquote p:first-child {
+  margin-top: 0;
+}
+li p:last-child, blockquote p:last-child {
+  margin-bottom: 0;
+}
+</style>
+<title>Alfred</title>
+<h1>Alfred</h1>
+<h2>My Alfred workflow</h2>
+<p>You can download the workflow from <a href="osxnotes.alfredworkflow">osxnotes.alfredworkflow</a>.</p>
+<p><code>u</code> searches for Unicode characters by character name and inserts the selected character, like <code>C-x 8 &lt;RET&gt;</code> in Emacs. It uses a script filter like this:</p>
+<pre><code>echo &#39;&lt;?xml version=&quot;1.0&quot;?&gt;&lt;items&gt;&#39;
+x=&quot;{query}&quot; awk -F\; &#39;tolower($3)~tolower(ENVIRON[&quot;x&quot;]){gsub(&quot;&amp;&quot;,&quot;\\\&amp;amp;&quot;,$1);gsub(&quot;\&quot;&quot;,&quot;\\\&amp;quot;&quot;,$1);gsub(&quot;&lt;&quot;,&quot;\\\&amp;lt;&quot;,$1);gsub(&quot;&gt;&quot;,&quot;\\\&amp;gt;&quot;,$1);print&quot;&lt;item&gt;&lt;arg&gt;&quot;$1&quot;&lt;/arg&gt;&lt;title&gt;&quot;$1&quot; &quot;$2&quot; &quot;$3&quot;&lt;/title&gt;&lt;icon&gt;&lt;/icon&gt;&lt;/item&gt;&quot;}&#39; unicode
+echo &#39;&lt;/items&gt;&lt;/xml&gt;&#39;</code></pre>
+<p>The <code>unicode</code> file contains the output of this command:</p>
+<pre><code>curl www.unicode.org/Public/UNIDATA/UnicodeData.txt|while read l;do [[ ${l#*;} != @(&lt;|SEMICOLON;)* ]]&amp;&amp;printf \\U$(printf %08d $((0x${l%%;*})));printf &#39;;%s\n&#39; &quot;$l&quot;;done</code></pre>
+<p><code>s</code> searches for files including files treated as system files in the search results.</p>
+<p>A hotkey opens the file browser in the home directory, so that it is equivalent to invoking Alfred and typing a tilde.</p>
+<h2>Using a text file to configure custom web search URLs</h2>
+<pre><code>#!/usr/bin/env bash
+
+amp() { local x=${1//&amp;/&amp;amp;};x=${x//&lt;/&amp;lt;};printf %s &quot;${x//&gt;/&amp;gt;}&quot;; }
+
+out=&#39;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+&lt;dict&gt;
+&lt;key&gt;customSites&lt;/key&gt;
+&lt;dict&gt;&#39;
+
+while read l;do
+  keyword=$(amp &quot;${l% *}&quot;)
+  url=$(amp &quot;${l#* }&quot;)
+  uuid=$(printf %26s $(printf %s &quot;$keyword&quot;|xxd -p))
+  uuid=${uuid// /0}
+  uuid=4c3ab872-${uuid:0:4}-${uuid:4:4}-${uuid:8:4}-${uuid:12:14} # the first part is just a random hex string
+  out+=&quot;&lt;key&gt;$uuid&lt;/key&gt;
+&lt;dict&gt;
+&lt;key&gt;enabled&lt;/key&gt;
+&lt;true/&gt;
+&lt;key&gt;keyword&lt;/key&gt;
+&lt;string&gt;$keyword&lt;/string&gt;
+&lt;key&gt;plusSpaces&lt;/key&gt;
+&lt;false/&gt;
+&lt;key&gt;text&lt;/key&gt;
+&lt;string&gt;$keyword {query}&lt;/string&gt;
+&lt;key&gt;url&lt;/key&gt;
+&lt;string&gt;$url&lt;/string&gt;
+&lt;key&gt;utf8&lt;/key&gt;
+&lt;true/&gt;
+&lt;/dict&gt;&quot;
+done&lt;~/n/urls
+
+printf %s\\n &quot;$out&lt;/dict&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;&quot;&gt;~/Library/Application\ Support/Alfred\ 2/Alfred.alfredpreferences/preferences/features/websearch/prefs.plist</code></pre>
+<p>Alfred registers changes to <code>websearch/prefs.plist</code> automatically within a few seconds. The script generates UUID-like strings that depend on the keyword instead of actual UUIDs, because the UUIDs are used to identify items in order to rank frequently used items higher in the search results.</p>
+<p><code>~/n/urls</code> contains lines like this:</p>
+<pre><code>a https://www.amazon.com/s/?field-keywords={query}
+bt https://btdb.in/q/{query}/
+e https://www.ebay.com/sch/i.html?_nkw={query}
+enja https://translate.google.com/#en/ja/{query}
+i http://www.google.com/search?q={query}&amp;tbm=isch
+jpop http://www.jpopsuki.eu/torrents.php?searchstr={query}
+maps http://maps.google.com/maps?q={query}
+music http://www.last.fm/music/{query}
+nyaa http://nyaa.eu/?page=search&amp;term={query}&amp;sort=2
+ru http://rutracker.org/forum/tracker.php?nm={query}
+scho https://scholar.google.com/scholar?as_vis=1&amp;q={query}&amp;hl=en&amp;as_sdt=1,5
+trau https://translate.google.com/#auto/en/{query}
+tru http://translate.google.com/translate?sl=auto&amp;tl=en&amp;u={query}
+w http://en.wikipedia.org/w/index.php?title=Special%3ASearch&amp;search={query}
+wiki http://en.wikipedia.org/wiki/{query}
+y http://youtube.com/results?search_query={query}</code></pre>
+<p><code>~/Library/LaunchAgents/alfredwebsearch.plist</code> runs the script when <code>~/n/urls</code> is modified:</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple Computer//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+&lt;dict&gt;
+  &lt;key&gt;Label&lt;/key&gt;
+  &lt;string&gt;alfredwebsearch&lt;/string&gt;
+  &lt;key&gt;Program&lt;/key&gt;
+  &lt;string&gt;alfredwebsearch&lt;/string&gt;
+  &lt;key&gt;WatchPaths&lt;/key&gt;
+  &lt;array&gt;
+    &lt;string&gt;~/n/urls&lt;/string&gt;
+  &lt;/array&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</code></pre>
+<p>I use this function to open URLs in <code>~/n/urls</code> from a shell:</p>
+<pre><code>url(){ local x y;while read x y;do if [[ $x = &quot;$1&quot; ]];then open &quot;${y//&#39;{query}&#39;/$(jq -Rr @uri &quot;${*:2}&quot;)}&quot;;break;fi;done&lt;~/n/urls; }</code></pre>
+<p>For example <code>url ru query</code> opens <code>http://rutracker.org/forum/tracker.php?nm=query</code>.</p>
+<h2>Workflow notes</h2>
+<p>Hotkeys have a short delay by default, but you can reduce it by secondary-clicking a shortcut recorder and changing the &quot;Trigger behaviour&quot; option from &quot;Simulate modifier keys released&quot; to &quot;Pass through modifier keys (fastest)&quot;.</p>
+<p>You can get the text selected in the frontmost application as input by adding a hotkey input element and setting the argument option to &quot;Selection in OS X&quot;. You can insert text in the frontmost application by adding a &quot;Copy to Clipboard&quot; output element and checking the &quot;Automatically paste text to frontmost app&quot; option.</p>
+<h2>Displaying or searching the clipboard history from a shell</h2>
+<pre><code>clip(){ sqlite3 ~/Library/Application\ Support/Alfred\ 2/Databases/clipboard.alfdb &#39;select replace(item,&quot;\\&quot;,&quot;\\\\&quot;)||&quot;\\0&quot;from clipboard&#39;|perl -pe&#39;s/\\0/\0/g;s/\\\\/\\/g&#39;|([[ $1 ]]&amp;&amp;ggrep -zZF &quot;$@&quot;)|awk 1; }</code></pre>
+<p><code>-z</code> uses null as the input delimiter and <code>-Z</code> uses null as the output delimiter in GNU <code>grep</code> but both <code>grep -z</code> and <code>grep -Z</code> are equivalent to <code>zgrep</code> in OS X's <code>grep</code>.</p>
+<p><code>awk 1</code> adds a linefeed to the end of the input if the input does not end with a linefeed and is not empty.</p>

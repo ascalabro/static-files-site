@@ -1,0 +1,162 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name=viewport content=width=device-width,initial-scale=1>
+<style>
+* {
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+body {
+  font: 16px Georgia, serif;
+}
+pre, code {
+  font: 14px Menlo, 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+  white-space: pre-wrap;
+  background: #e5e5e5;
+}
+blockquote {
+  background: #e5e5e5;
+  margin-left: 0;
+  margin-right: 0;
+  border-left: 4px solid #aaa;
+  padding: 1em 0 1em 1em;
+}
+li p:first-child, blockquote p:first-child {
+  margin-top: 0;
+}
+li p:last-child, blockquote p:last-child {
+  margin-bottom: 0;
+}
+</style>
+<title>Defaults</title>
+<h1>Defaults</h1>
+<h2>Defaults</h2>
+<pre><code># use a lighter text rendering style
+defaults write -g AppleFontSmoothing -int 1
+
+# disable smooth scrolling
+defaults write -g NSScrollAnimationEnabled -bool false
+
+# remove the animations for opening and closing windows
+defaults write -g NSAutomaticWindowAnimationsEnabled -bool false
+
+# remove the animations for opening and closing Quick Look windows
+defaults write -g QLPanelAnimationDuration -float 0
+
+# don&#39;t use iCloud as the default location in save dialogs
+defaults write -g NSDocumentSaveNewDocumentsToCloud -bool false
+
+# don&#39;t show an open panel when opening an application like TextEdit or Preview
+defaults write -g NSShowAppCentricOpenPanelInsteadOfUntitledFile -bool false
+
+# expand save and print dialogs by default
+defaults write -g NSNavPanelExpandedStateForSaveMode -bool true
+defaults write -g PMPrintingExpandedStateForPrint -bool true
+
+# disable automatic spell checking
+defaults write -g NSAllowContinuousSpellChecking -bool false
+
+# increase the tracking speed above the maximum value selectable from System Preferences (3.0)
+defaults write -g com.apple.mouse.scaling -float 5.0
+
+# don&#39;t blink the caret
+defaults write -g NSTextInsertionPointBlinkPeriodOff -float 0
+defaults write -g NSTextInsertionPointBlinkPeriodOn -float 999999999999
+
+# don&#39;t treat period or colon as part of words
+# en_US_POSIX corresponds to the &quot;United States (Computer)&quot; setting that was shown in System Preferences in 10.8 and earlier
+defaults write -g AppleTextBreakLocale en_US_POSIX
+
+# display ASCII control characters in caret notation
+defaults write -g NSTextShowsControlCharacters -bool true
+
+# add a context menu item for showing the web inspector to web views
+defaults write -g WebKitDeveloperExtras -bool true
+
+# make the speed when scrolling by dragging faster
+defaults write -g NSAutoscrollResponseMultiplier -float 3
+
+# don&#39;t include shadows in screenshots of windows
+defaults write com.apple.screencapture disable-shadow -bool true
+
+# don&#39;t show crash report dialogs
+defaults write com.apple.CrashReporter DialogType none
+
+# don&#39;t show a warning when opening files downloaded from the Internet
+# this does not disable the warnings shown when opening an application for the first time
+defaults write com.apple.LaunchServices LSQuarantine -bool false
+
+# don&#39;t verify disk images and don&#39;t run fsck on quarantined disk images
+defaults write com.apple.frameworks.diskimages skip-verify -bool true
+defaults write com.apple.frameworks.diskimages auto-fsck -bool true
+
+# don&#39;t save .DS_Store files on network volumes
+defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+
+# don&#39;t open a Finder window when extracting an archive
+defaults write com.apple.archiveutility dearchive-reveal-after -bool false
+
+# don&#39;t open a Finder window when mounting a volume
+defaults write com.apple.finder OpenWindowForNewRemovableDisk -bool false
+
+# change the default fonts in Safari
+defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2StandardFontFamily Georgia
+defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2DefaultFontSize 16
+defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2FixedFontFamily Menlo
+defaults write com.apple.Safari com.apple.Safari.ContentPageGroupIdentifier.WebKit2DefaultFixedFontSize 14
+
+# use a custom implementation for full screen windows in Skim
+defaults write net.sourceforge.skim-app.skim SKUseLegacyFullScreen -bool true
+
+# hide the sides of the drawers in full screen in Skim
+defaults write net.sourceforge.skim-app.skim SKHideClosedFullScreenSidePanels -bool true</code></pre>
+<h2>Finding keys for preferences</h2>
+<pre><code>mdfind kMDItemContentType=public.unix-executable -onlyin /System|xargs strings 2&gt;/dev/null|grep -E &#39;^[a-zA-Z0-9.-]{10,80}$&#39;|awk &#39;!a[$0]++&#39;|grep -i scroll
+strings /Applications/iTunes.app/Contents/MacOS/iTunes|grep -E &#39;^[[:alnum:]_.-]{10,80}$&#39;|awk &#39;!a[$0]++&#39;
+for f in /Applications/*.app/Contents/MacOS/*;do strings &quot;$f&quot;2&gt;/dev/null|awk &#39;!a[$0]++&#39;|grep -i spellchecking|sed &quot;s/^/${f##*/} /g&quot;;done
+strings /System/Library/PrivateFrameworks/FinderKit.framework/Versions/A/FinderKit|grep -E &#39;^[[:alnum:]_.:-]{10,80}$&#39;|awk &#39;!a[$0]++&#39;|grep &#39;^[A-Z]&#39;
+grep PreferenceKey -r ~/Downloads/WebKit-SVN-source/</code></pre>
+<h2>Finding keys for preferences with gdb</h2>
+<p>See <a href="http://arcticmac.home.comcast.net/~arcticmac/tutorials/gdbFindingPrefs.html">http://arcticmac.home.comcast.net/~arcticmac/tutorials/gdbFindingPrefs.html</a>.</p>
+<p>Save a file like this as <code>/tmp/gdb</code>:</p>
+<pre><code>set logging redirect
+set logging file /tmp/gdboutput
+set logging on
+break CFPreferencesCopyAppValue
+commands 1
+silent
+if $rdi
+if $rsi
+print-object [$rdi stringByAppendingFormat:@&quot;;%@&quot;,$rsi]
+else
+print-object [$rdi stringByAppendingString:@&quot;;--noDomain--&quot;]
+end
+end
+continue
+end
+break CFPreferencesCopyValue
+commands 2
+silent
+if $rdi
+if $rsi
+print-object [$rdi stringByAppendingFormat:@&quot;;%@&quot;,$rsi]
+else
+print-object [$rdi stringByAppendingString:@&quot;;--noDomain--&quot;]
+end
+end
+continue
+end
+break CFPreferencesCopyMultiple
+commands 3
+silent
+if $rdi
+if $rsi
+print-object [[$rdi description] stringByAppendingFormat:@&quot;;;%@&quot;,$rsi]
+else
+print-object [[$rdi description] stringByAppendingString:@&quot;;;--noDomain--&quot;]
+end
+end
+continue
+end
+run</code></pre>
+<p>Then quit iTunes, run <code>gdb -x /tmp/gdb /Applications/iTunes.app/Contents/MacOS/iTunes</code>, open iTunes, do something in iTunes for a while, terminate <code>gdb</code> by pressing <code>C-d</code> twice, and look at <code>/tmp/gdboutput</code>.</p>

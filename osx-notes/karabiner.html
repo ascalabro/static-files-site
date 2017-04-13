@@ -1,0 +1,514 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name=viewport content=width=device-width,initial-scale=1>
+<style>
+* {
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+body {
+  font: 16px Georgia, serif;
+}
+pre, code {
+  font: 14px Menlo, 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+  white-space: pre-wrap;
+  background: #e5e5e5;
+}
+blockquote {
+  background: #e5e5e5;
+  margin-left: 0;
+  margin-right: 0;
+  border-left: 4px solid #aaa;
+  padding: 1em 0 1em 1em;
+}
+li p:first-child, blockquote p:first-child {
+  margin-top: 0;
+}
+li p:last-child, blockquote p:last-child {
+  margin-bottom: 0;
+}
+</style>
+<title>Karabiner</title>
+<h1>Karabiner</h1>
+<p>See <a href="https://pqrs.org/osx/karabiner/document.html.en">https://pqrs.org/osx/karabiner/document.html.en</a> and <a href="https://pqrs.org/osx/karabiner/xml.html.en">https://pqrs.org/osx/karabiner/xml.html.en</a> for documentation. Key codes are listed in <a href="https://github.com/tekezo/karabiner/blob/master/src/bridge/generator/keycode/data/KeyCode.data">https://github.com/tekezo/karabiner/blob/master/src/bridge/generator/keycode/data/KeyCode.data</a>.</p>
+<p>You can add custom settings in <code>~/Library/Application Support/Karabiner/private.xml</code>. Press the ReloadXML button or run <code>/Applications/Karabiner.app/Contents/Library/bin/karabiner reloadxml</code> to apply changes to <code>private.xml</code>.</p>
+<p><code>/Applications/Karabiner.app/Contents/Applications/EventViewer.app</code> shows information about pressed keys, devices, and input sources.</p>
+<p>You can search in <code>/Applications/Karabiner.app/Contents/Resources/**/*.xml</code> to see where something is defined.</p>
+<h2>Examples</h2>
+<p>Change the right option key to the combintation of control, option, shift, and command:</p>
+<pre><code>&lt;autogen&gt;__KeyToKey__ KeyCode::OPTION_R, KeyCode::OPTION_R, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;</code></pre>
+<p>Change the right command key to F19 when pressed and to an extra modifier key when held:</p>
+<pre><code>&lt;autogen&gt;__KeyOverlaidModifier__ KeyCode::COMMAND_R, KeyCode::VK_MODIFIER_EXTRA1, KeyCode::F19&lt;/autogen&gt;</code></pre>
+<p>Change pointing device button 4 to page down:</p>
+<pre><code>&lt;autogen&gt;__KeyToKey__ PointingButton::BUTTON4, KeyCode::PAGEDOWN&lt;/autogen&gt;</code></pre>
+<p>Make the volume keys change volume in smaller increments:</p>
+<pre><code>&lt;autogen&gt;__KeyToKey__ KeyCode::VK_CONSUMERKEY_VOLUME_DOWN, ModifierFlag::NONE, KeyCode::VK_CONSUMERKEY_VOLUME_DOWN, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L&lt;/autogen&gt;
+&lt;autogen&gt;__KeyToKey__ KeyCode::VK_CONSUMERKEY_VOLUME_UP, ModifierFlag::NONE, KeyCode::VK_CONSUMERKEY_VOLUME_UP, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L&lt;/autogen&gt;</code></pre>
+<p>Map pressing the fn key twice to caps lock:</p>
+<pre><code>&lt;autogen&gt;__DoublePressModifier__ KeyCode::FN, KeyCode::FN, KeyCode::CAPS_LOCK&lt;/autogen&gt;</code></pre>
+<p>Change the input mode to English when pressing escape in MacVim:</p>
+<pre><code>&lt;only&gt;VI&lt;/only&gt;
+&lt;autogen&gt;__KeyToKey__ KeyCode::ESCAPE, KeyCode::ESCAPE, KeyCode::VK_CHANGE_INPUTMODE_ENGLISH&lt;/autogen&gt;</code></pre>
+<p>Map control-return to enter:</p>
+<pre><code>&lt;autogen&gt;__KeyToKey__ KeyCode::RETURN, VK_CONTROL | ModifierFlag::NONE, KeyCode::ENTER&lt;/autogen&gt;</code></pre>
+<p>Scroll by moving the pointer while holding the secondary pointing device button:</p>
+<pre><code>&lt;autogen&gt;__PointingRelativeToScroll__ PointingButton::RIGHT&lt;/autogen&gt;</code></pre>
+<p>Scroll by moving the pointer while holding fn:</p>
+<pre><code>&lt;autogen&gt;__PointingRelativeToScroll__ PointingButton::NONE, VK_FN&lt;/autogen&gt;</code></pre>
+<p>Disable command-tab and shift-command-tab:</p>
+<pre><code>&lt;autogen&gt;__KeyToKey__ KeyCode::TAB, VK_COMMAND | ModifierFlag::NONE, KeyCode::VK_NONE&lt;/autogen&gt;
+&lt;autogen&gt;__KeyToKey__ KeyCode::TAB, VK_COMMAND | VK_SHIFT | ModifierFlag::NONE, KeyCode::VK_NONE&lt;/autogen&gt;</code></pre>
+<p>Map holding X to Y:</p>
+<pre><code>&lt;autogen&gt;__HoldingKeyToKey__ KeyCode::X, KeyCode::X, KeyCode::VK_NONE, KeyCode::Y, Option::NOREPEAT&lt;/autogen&gt;</code></pre>
+<p>Map pressing X and Y simultaneously to Z:</p>
+<pre><code>&lt;autogen&gt;__SimultaneousKeyPresses__ KeyCode::X, KeyCode::Y, KeyCode::Z&lt;/autogen&gt;</code></pre>
+<p>Temporarily switch to the Russian input mode when holding F1:</p>
+<pre><code>&lt;autogen&gt;__KeyToKey__ KeyCode::F1, KeyCode::VK_NONE, Option::KEYTOKEY_BEFORE_KEYDOWN, KeyCode::VK_CHANGE_INPUTMODE_RUSSIAN, Option::KEYTOKEY_AFTER_KEYUP, KeyCode::VK_CHANGE_INPUTMODE_ENGLISH&lt;/autogen&gt;</code></pre>
+<p>Map control-shift-escape to display sleep:</p>
+<pre><code>&lt;autogen&gt;__KeyToKey__ KeyCode::ESCAPE, VK_CONTROL | VK_SHIFT | ModifierFlag::NONE, KeyCode::VK_CONSUMERKEY_EJECT, ModifierFlag::CONTROL_L | ModifierFlag::SHIFT_L&lt;/autogen&gt;</code></pre>
+<p>Map pressing the left shift while holding the left option to F19:</p>
+<pre><code>&lt;autogen&gt;__KeyOverlaidModifier__ KeyCode::SHIFT_L, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::NONE, KeyCode::SHIFT_L, ModifierFlag::OPTION_L, KeyCode::F19&lt;/autogen&gt;</code></pre>
+<p>Map pressing the left and up arrow keys simultaneously while holding command to F19:</p>
+<pre><code>&lt;autogen&gt;__SimultaneousKeyPresses__ KeyCode::CURSOR_UP, MODIFIERFLAG_EITHER_LEFT_OR_RIGHT_COMMAND | ModifierFlag::NONE, KeyCode::CURSOR_LEFT, MODIFIERFLAG_EITHER_LEFT_OR_RIGHT_COMMAND | ModifierFlag::NONE, KeyCode::F19&lt;/autogen&gt;</code></pre>
+<p>Map the right option key to a holdable caps lock:</p>
+<pre><code>&lt;autogen&gt;__KeyToKey__ KeyCode::OPTION_R, Option::KEYTOKEY_BEFORE_KEYDOWN, KeyCode::CAPSLOCK, Option::KEYTOKEY_AFTER_KEYUP, KeyCode::CAPSLOCK&lt;/autogen&gt;</code></pre>
+<p>Map pressing the left and right pointing device buttons simultaneously to command-W:</p>
+<pre><code>&lt;autogen&gt;__SimultaneousKeyPresses__ PointingButton::LEFT, PointingButton::RIGHT, KeyCode::W, ModifierFlag::COMMAND_L&lt;/autogen&gt;</code></pre>
+<h2>Modifier keys</h2>
+<p><code>VK_COMMAND</code> and <code>MODIFIERFLAG_EITHER_LEFT_OR_RIGHT_COMMAND</code> apply to both left and right command keys, but <code>VK_COMMAND</code> also applies to keys remapped to command.</p>
+<p>This only changes option-B to option-left and does not affect for example option-command-B:</p>
+<pre><code>&lt;autogen&gt;__KeyToKey__ KeyCode::B, VK_OPTION | Modifierflag::NONE, KeyCode::CURSOR_LEFT, ModifierFlag::OPTION_L&lt;/autogen&gt;</code></pre>
+<p>This also changes for example option-command-B to option-command-left:</p>
+<pre><code>&lt;autogen&gt;__KeyToKey__ KeyCode::B, VK_OPTION, KeyCode::CURSOR_LEFT, ModifierFlag::OPTION_L&lt;/autogen&gt;</code></pre>
+<h2>vkopenurldef</h2>
+<pre><code>&lt;vkopenurldef&gt;
+  &lt;name&gt;KeyCode::VK_OPEN_URL_SAFARI&lt;/name&gt;
+  &lt;url&gt;file:///Applications/Safari.app&lt;/url&gt;
+&lt;/vkopenurldef&gt;
+&lt;vkopenurldef&gt;
+  &lt;name&gt;KeyCode::VK_OPEN_URL_PRIVATEXML&lt;/name&gt;
+  &lt;url&gt;file:///{{ENV_HOME}}/Library/Application%20Support/Karabiner/private.xml&lt;/url&gt;
+&lt;/vkopenurldef&gt;
+&lt;vkopenurldef&gt;
+  &lt;name&gt;KeyCode::VK_OPEN_URL_GOOGLE&lt;/name&gt;
+  &lt;url&gt;https://www.google.com/&lt;/url&gt;
+&lt;/vkopenurldef&gt;
+&lt;item&gt;
+  &lt;name&gt;custom&lt;/name&gt;
+  &lt;identifier&gt;custom&lt;/identifier&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F11 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SAFARI&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::P, ModifierFlag::OPTION_R | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_PRIVATEXML&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::G, ModifierFlag::OPTION_R | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_GOOGLE&lt;/autogen&gt;
+&lt;/item&gt;</code></pre>
+<h2>Making short presses of modifier keys open applications</h2>
+<pre><code>&lt;vkopenurldef&gt;
+  &lt;name&gt;KeyCode::VK_OPEN_URL_EMACS&lt;/name&gt;
+  &lt;url&gt;file:///Applications/Emacs.app&lt;/url&gt;
+&lt;/vkopenurldef&gt;
+&lt;vkopenurldef&gt;
+  &lt;name&gt;KeyCode::VK_OPEN_URL_ITERM&lt;/name&gt;
+  &lt;url&gt;file:///Applications/iTerm.app&lt;/url&gt;
+&lt;/vkopenurldef&gt;
+&lt;item&gt;
+  &lt;name&gt;custom&lt;/name&gt;
+  &lt;identifier&gt;custom&lt;/identifier&gt;
+  &lt;autogen&gt;__KeyOverlaidModifier__ KeyCode::COMMAND_L, KeyCode::COMMAND_L, KeyCode::VK_OPEN_URL_EMACS&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyOverlaidModifier__ KeyCode::COMMAND_R, KeyCode::COMMAND_R, KeyCode::VK_OPEN_URL_ITERM&lt;/autogen&gt;
+&lt;/item&gt;</code></pre>
+<p>If you trigger the short presses of keys accidentally, try to reduce the timeout for <code>KeyOverlaidModifier</code> from 1000 ms to something like 200 ms. The delay is higher than the delay until key repeat by default, but you can reduce the delay if you do not need key repeat for keys with a <code>KeyOverlaidModifier</code> autogen.</p>
+<h2>Running a shell script</h2>
+<pre><code>&lt;vkopenurldef&gt;
+  &lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_display_sleep&lt;/name&gt;
+  &lt;url type=&quot;shell&quot;&gt;pmset displaysleepnow&lt;/url&gt;
+&lt;/vkopenurldef&gt;
+&lt;item&gt;
+  &lt;name&gt;custom&lt;/name&gt;
+  &lt;identifier&gt;custom&lt;/identifier&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::ESCAPE, VK_CONTROL | VK_SHIFT, KeyCode::VK_OPEN_URL_SHELL_display_sleep&lt;/autogen&gt;
+&lt;/item&gt;</code></pre>
+<h2>Toggling settings</h2>
+<pre><code>&lt;item&gt;
+  &lt;name&gt;custom&lt;/name&gt;
+  &lt;identifier&gt;custom&lt;/identifier&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::ESCAPE, ModifierFlag::FN | ModifierFlag::NONE, KeyCode::VK_CONFIG_TOGGLE_swapbuttons&lt;/autogen&gt;
+&lt;/item&gt;
+&lt;item&gt;
+  &lt;name&gt;swapbuttons&lt;/name&gt;
+  &lt;identifier vk_config=&quot;true&quot;&gt;swapbuttons&lt;/identifier&gt;
+  &lt;autogen&gt;__PointingButtonToPointingButton__ PointingButton::LEFT, PointingButton::RIGHT&lt;/autogen&gt;
+  &lt;autogen&gt;__PointingButtonToPointingButton__ PointingButton::RIGHT, PointingButton::LEFT&lt;/autogen&gt;
+&lt;/item&gt;</code></pre>
+<h2>Input sources</h2>
+<pre><code>&lt;inputsourcedef&gt;
+  &lt;name&gt;KOTOERI&lt;/name&gt;
+  &lt;inputsourceid_prefix&gt;com.apple.inputmethod.Kotoeri.&lt;/inputsourceid_prefix&gt;
+&lt;/inputsourcedef&gt;
+&lt;item&gt;
+  &lt;name&gt;custom&lt;/name&gt;
+  &lt;identifier&gt;custom&lt;/identifier&gt;
+  &lt;inputmode_only&gt;KOTOERI&lt;/inputmode_only&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::A, KeyCode::B&lt;/autogen&gt;
+&lt;/item&gt;
+&lt;vkchangeinputsourcedef&gt;
+  &lt;name&gt;KeyCode::VK_CHANGE_INPUTSOURCE_HIRAGANA&lt;/name&gt;
+  &lt;inputsourceid_equal&gt;com.apple.inputmethod.Kotoeri.Japanese&lt;/inputsourceid_equal&gt;
+&lt;/vkchangeinputsourcedef&gt;
+&lt;item&gt;
+  &lt;name&gt;test2&lt;/name&gt;
+  &lt;identifier&gt;test2&lt;/identifier&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::E, VK_OPTION | ModifierFlag::NONE, KeyCode::VK_CHANGE_INPUTSOURCE_ENGLISH&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::H, VK_OPTION | ModifierFlag::NONE, KeyCode::VK_CHANGE_INPUTSOURCE_HIRAGANA&lt;/autogen&gt;
+&lt;/item&gt;</code></pre>
+<p>The predefined names for input sources are listed in <a href="https://github.com/tekezo/Karabiner/blob/master/src/core/server/Resources/inputsourcedef.xml">https://github.com/tekezo/Karabiner/blob/master/src/core/server/Resources/inputsourcedef.xml</a>.</p>
+<h2>Device-specific settings</h2>
+<pre><code>&lt;devicevendordef&gt;
+  &lt;vendorname&gt;KINESIS&lt;/vendorname&gt;
+  &lt;vendorid&gt;0x05f3&lt;/vendorid&gt;
+&lt;/devicevendordef&gt;
+&lt;deviceproductdef&gt;
+  &lt;productname&gt;ADVANTAGE&lt;/productname&gt;
+  &lt;productid&gt;0x0007&lt;/productid&gt;
+&lt;/deviceproductdef&gt;
+&lt;item&gt;
+  &lt;name&gt;custom&lt;/name&gt;
+  &lt;identifier&gt;custom&lt;/identifier&gt;
+  &lt;device_only&gt;DeviceVendor::KINESIS, DeviceProduct::ADVANTAGE&lt;/device_only&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::X, KeyCode::Y&lt;/autogen&gt;
+&lt;/item&gt;</code></pre>
+<p>You can see the vendor and product IDs from EventViewer or by running <code>ioreg -rn IOHIDKeyboard</code>.</p>
+<h2>Flipping F-keys</h2>
+<pre><code>&lt;item&gt;
+  &lt;name&gt;fkeys&lt;/name&gt;
+  &lt;identifier&gt;fkeys&lt;/identifier&gt;
+  &lt;autogen&gt;__KeyToKey__ ConsumerKeyCode::BRIGHTNESS_DOWN, KeyCode::F1&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ ConsumerKeyCode::BRIGHTNESS_UP, KeyCode::F2&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::EXPOSE_ALL, KeyCode::F3&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::LAUNCHPAD, KeyCode::F4&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ ConsumerKeyCode::KEYBOARDLIGHT_LOW, KeyCode::F5&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ ConsumerKeyCode::KEYBOARDLIGHT_HIGH, KeyCode::F6&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ ConsumerKeyCode::MUSIC_PREV, KeyCode::F7&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ ConsumerKeyCode::MUSIC_PLAY, KeyCode::F8&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ ConsumerKeyCode::MUSIC_NEXT, KeyCode::F9&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ ConsumerKeyCode::VOLUME_MUTE, KeyCode::F10&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ ConsumerKeyCode::VOLUME_DOWN, KeyCode::F11&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ ConsumerKeyCode::VOLUME_UP, KeyCode::F12&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F1, ConsumerKeyCode::BRIGHTNESS_DOWN&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F2, ConsumerKeyCode::BRIGHTNESS_UP&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F3, KeyCode::EXPOSE_ALL&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F4, KeyCode::LAUNCHPAD&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F5, ConsumerKeyCode::KEYBOARDLIGHT_LOW&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F6, ConsumerKeyCode::KEYBOARDLIGHT_HIGH&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F7, ConsumerKeyCode::MUSIC_PREV&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F8, ConsumerKeyCode::MUSIC_PLAY&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F9, ConsumerKeyCode::MUSIC_NEXT&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F10, ConsumerKeyCode::VOLUME_MUTE&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F11, ConsumerKeyCode::VOLUME_DOWN&lt;/autogen&gt;
+  &lt;autogen&gt;__KeyToKey__ KeyCode::F12, ConsumerKeyCode::VOLUME_UP&lt;/autogen&gt;
+&lt;/item&gt;</code></pre>
+<h2>Adding Emacs word and character navigation keybindings</h2>
+<pre><code>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;root&gt;
+  &lt;appdef&gt;
+    &lt;appname&gt;EMACSMODEIGNORE&lt;/appname&gt;
+    &lt;equal&gt;org.gnu.Emacs&lt;/equal&gt;
+    &lt;equal&gt;com.apple.Terminal&lt;/equal&gt;
+    &lt;equal&gt;com.googlecode.iterm2&lt;/equal&gt;
+    &lt;equal&gt;com.vmware.fusion&lt;/equal&gt;
+    &lt;prefix&gt;com.vmware.proxyApp.&lt;/prefix&gt;
+  &lt;/appdef&gt;
+  &lt;item&gt;
+    &lt;name&gt;emacs&lt;/name&gt;
+    &lt;identifier&gt;emacs&lt;/identifier&gt;
+    &lt;not&gt;EMACSMODEIGNORE&lt;/not&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::P, VK_CONTROL | ModifierFlag::NONE, KeyCode::CURSOR_UP&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::N, VK_CONTROL | ModifierFlag::NONE, KeyCode::CURSOR_DOWN&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::B, VK_CONTROL | ModifierFlag::NONE, KeyCode::CURSOR_LEFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F, VK_CONTROL | ModifierFlag::NONE, KeyCode::CURSOR_RIGHT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::P, VK_CONTROL | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_UP, VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::N, VK_CONTROL | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_DOWN, VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::B, VK_CONTROL | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_LEFT, VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F, VK_CONTROL | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_RIGHT, VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::B, VK_OPTION | ModifierFlag::NONE, KeyCode::CURSOR_LEFT, VK_OPTION&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F, VK_OPTION | ModifierFlag::NONE, KeyCode::CURSOR_RIGHT, VK_OPTION&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::B, VK_OPTION | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_LEFT, VK_OPTION | VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F, VK_OPTION | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_RIGHT, VK_OPTION | VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::D, VK_OPTION | ModifierFlag::NONE, KeyCode::FORWARD_DELETE, VK_OPTION&lt;/autogen&gt;
+  &lt;/item&gt;
+&lt;/root&gt;</code></pre>
+<p><a href="https://github.com/tekezo/Karabiner/blob/master/src/core/server/Resources/include/checkbox/emacs_mode.xml">https://github.com/tekezo/Karabiner/blob/master/src/core/server/Resources/include/checkbox/emacs_mode.xml</a> includes some more settings.</p>
+<h2>My private.xml</h2>
+<p>I use a keyboard which has 12 keys under the thumbs. I have remapped all of the keys under the thumbs, and I use three of them as extra modifier keys. My keyboard layout is Colemak, so for example <code>KeyCode::S</code> is actually the R key.</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;root&gt;
+  &lt;devicevendordef&gt;
+    &lt;vendorname&gt;KINESIS&lt;/vendorname&gt;
+    &lt;vendorid&gt;0x05f3&lt;/vendorid&gt;
+  &lt;/devicevendordef&gt;
+  &lt;deviceproductdef&gt;
+    &lt;productname&gt;ADVANTAGE&lt;/productname&gt;
+    &lt;productid&gt;0x0007&lt;/productid&gt;
+  &lt;/deviceproductdef&gt;
+
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_ACTIVITYMONITOR&lt;/name&gt;&lt;url&gt;file:///Applications/Utilities/Activity%20Monitor.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SCRIPTEDITOR&lt;/name&gt;&lt;url&gt;file:///Applications/Utilities/Script%20Editor.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_APPSTORE&lt;/name&gt;&lt;url&gt;file:///Applications/App%20Store.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_EMACS&lt;/name&gt;&lt;url&gt;file:///usr/local/opt/emacs/Emacs.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_FINDER&lt;/name&gt;&lt;url&gt;file:///System/Library/CoreServices/Finder.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_GOOGLECHROME&lt;/name&gt;&lt;url&gt;file:///Applications/Google%20Chrome.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_ITERM&lt;/name&gt;&lt;url&gt;file:///Applications/iTerm.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_ITUNES&lt;/name&gt;&lt;url&gt;file:///Applications/iTunes.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_MAIL&lt;/name&gt;&lt;url&gt;file:///Applications/Mail.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_MOVIST&lt;/name&gt;&lt;url&gt;file:///Applications/Movist.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_PAGES&lt;/name&gt;&lt;url&gt;file:///Applications/Pages.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_PREVIEW&lt;/name&gt;&lt;url&gt;file:///Applications/Preview.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SAFARI&lt;/name&gt;&lt;url&gt;file:///Applications/Safari.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SEQUENTIAL&lt;/name&gt;&lt;url&gt;file:///Applications/Sequential.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SKIM&lt;/name&gt;&lt;url&gt;file:///Applications/Skim.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SYSTEMPREFERENCES&lt;/name&gt;&lt;url&gt;file:///Applications/System%20Preferences.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_TEXTEDIT&lt;/name&gt;&lt;url&gt;file:///Applications/TextEdit.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_TRANSMISSION&lt;/name&gt;&lt;url&gt;file:///Applications/Transmission.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_TWEETBOT&lt;/name&gt;&lt;url&gt;file:///Applications/Tweetbot.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_VMWAREFUSION&lt;/name&gt;&lt;url&gt;file:///Applications/VMware%20Fusion.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_WRITEROOM&lt;/name&gt;&lt;url&gt;file:///Applications/WriteRoom.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_LIVE&lt;/name&gt;&lt;url&gt;file:///Applications/Ableton%20Live%209%20Suite.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_VLC&lt;/name&gt;&lt;url&gt;file:///Applications/VLC.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SPOTIFY&lt;/name&gt;&lt;url&gt;file:///Applications/Spotify.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_IBOOKS&lt;/name&gt;&lt;url&gt;file:///Applications/iBooks.app&lt;/url&gt;&lt;/vkopenurldef&gt;
+
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_APPLESCRIPT&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/dir/osx/applescript.md&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_BASHRC&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/.bashrc&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_BLOGSPOT&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/blogspot&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_BUFFER&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/buffer&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_COPIED&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/copied&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_DOTEMACS&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/.emacs&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_TOREAD&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/toread&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_EMACS&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/emacsbasic&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_JS&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/js&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_N&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/n&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_NOTES&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/notes&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_OSX&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/Sites/me/osx.txt&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_PRIVATEXML&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/Library/Application\ Support/Karabiner/private.xml&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_Q&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/q&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_READINGLIST&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/readinglist&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_RUBY&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/ruby&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_S1&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/s1&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_SHELL&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/shell&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_SHELLALT&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/Sites/me/shellalt.txt&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_SHELLNOTES&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/shellnotes&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_STUDY&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/study&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_TODO&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/todo&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_TWEETS&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;open ~/Downloads/tweets -e&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_TWEETS2&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/tweets&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_P&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/p&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_SHELL1&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/shell1&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_HY&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/hy&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_SHELL_JAVA&lt;/name&gt;&lt;url type=&quot;shell&quot;&gt;/usr/local/bin/emacsclient -n ~/notes/java&lt;/url&gt;&lt;/vkopenurldef&gt;
+
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_TEMPLATE&lt;/name&gt;&lt;url&gt;file://{{ENV_HOME}}/Documents/audio/template%20Project/template.als&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_VM1&lt;/name&gt;&lt;url&gt;file://{{ENV_HOME}}/Documents/vm/Mavericks.vmwarevm&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_VM2&lt;/name&gt;&lt;url&gt;file://{{ENV_HOME}}/Documents/vm/Mountain%20Lion.vmwarevm&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_VM3&lt;/name&gt;&lt;url&gt;file://{{ENV_HOME}}/Documents/vm/Lion.vmwarevm&lt;/url&gt;&lt;/vkopenurldef&gt;
+  &lt;vkopenurldef&gt;&lt;name&gt;KeyCode::VK_OPEN_URL_VM4&lt;/name&gt;&lt;url&gt;file://{{ENV_HOME}}/Documents/vm/Ubuntu.vmwarevm&lt;/url&gt;&lt;/vkopenurldef&gt;
+
+  &lt;item&gt;
+    &lt;name&gt;custom&lt;/name&gt;
+    &lt;identifier&gt;custom&lt;/identifier&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::V, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_VLC&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::HOME, ModifierFlag::EXTRA1, KeyCode::VK_OPEN_URL_TEXTEDIT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::DELETE, ModifierFlag::EXTRA1, KeyCode::VK_OPEN_URL_MAIL&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::FORWARD_DELETE, ModifierFlag::EXTRA1, KeyCode::VK_OPEN_URL_SKIM&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::END, ModifierFlag::EXTRA1, KeyCode::VK_OPEN_URL_PREVIEW&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::A, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_APPSTORE&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_TRANSMISSION&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::M, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_MOVIST&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::O, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_ACTIVITYMONITOR&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::Q, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SCRIPTEDITOR&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::R, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_PAGES&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::X, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_GOOGLECHROME&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::Z, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SEQUENTIAL&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::W, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_WRITEROOM&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::COMMA, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SYSTEMPREFERENCES&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::SLASH, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_ITUNES&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::U, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_LIVE&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_3, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SPOTIFY&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_4, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_IBOOKS&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::DELETE, ModifierFlag::EXTRA2, KeyCode::VK_OPEN_URL_SHELL_BUFFER&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::FORWARD_DELETE, ModifierFlag::EXTRA2, KeyCode::VK_OPEN_URL_SHELL_TODO&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::HOME, ModifierFlag::EXTRA2, KeyCode::VK_OPEN_URL_SHELL_TWEETS2&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::END, ModifierFlag::EXTRA2, KeyCode::VK_OPEN_URL_SHELL_P&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::A, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_APPLESCRIPT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::B, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_BLOGSPOT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::H, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_HY&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::C, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_COPIED&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::D, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_SHELL&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_TWEETS&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::G, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_TOREAD&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::J, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_N&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::O, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_STUDY&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::Q, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_Q&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::R, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_PRIVATEXML&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::K, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_EMACS&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::S, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_RUBY&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::U, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_SHELLALT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::X, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_OSX&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::Y, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_JS&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::BRACKET_LEFT, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_SHELLNOTES&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::BRACKET_RIGHT, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_S1&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_1, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_VM1&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_2, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_VM2&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_3, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_VM3&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_4, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_VM4&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::DOT, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_DOTEMACS&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::COMMA, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_BASHRC&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CURSOR_DOWN, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_READINGLIST&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CURSOR_UP, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_SHELL1&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_6, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_SHELL_JAVA&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F, ModifierFlag::EXTRA2 | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_TEMPLATE&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_1, ModifierFlag::EXTRA1, KeyCode::VK_CONSUMERKEY_BRIGHTNESS_DOWN&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_2, ModifierFlag::EXTRA1, KeyCode::VK_CONSUMERKEY_BRIGHTNESS_UP&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_6, ModifierFlag::EXTRA1, KeyCode::VK_CONSUMERKEY_MUSIC_PREV&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_7, ModifierFlag::EXTRA1, KeyCode::VK_CONSUMERKEY_MUSIC_PLAY&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_8, ModifierFlag::EXTRA1, KeyCode::VK_CONSUMERKEY_MUSIC_NEXT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_9, ModifierFlag::EXTRA1, KeyCode::VK_CONSUMERKEY_VOLUME_DOWN, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_0, ModifierFlag::EXTRA1, KeyCode::VK_CONSUMERKEY_VOLUME_UP, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyOverlaidModifier__ KeyCode::PAGEUP, KeyCode::CONTROL_L, KeyCode::VK_OPEN_URL_ITERM&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyOverlaidModifier__ KeyCode::PAGEDOWN, KeyCode::OPTION_L, KeyCode::VK_OPEN_URL_EMACS&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyOverlaidModifier__ KeyCode::SPACE, KeyCode::SHIFT_L, KeyCode::VK_OPEN_URL_SHELL_NOTES&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyOverlaidModifier__ KeyCode::RETURN, KeyCode::COMMAND_L, KeyCode::VK_OPEN_URL_SAFARI&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyOverlaidModifier__ KeyCode::CONTROL_R, KeyCode::VK_MODIFIER_EXTRA1, KeyCode::F19, ModifierFlag::COMMAND_L&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyOverlaidModifier__ KeyCode::OPTION_R, KeyCode::VK_MODIFIER_EXTRA2, KeyCode::F18, ModifierFlag::COMMAND_L&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::J, ModifierFlag::EXTRA1, KeyCode::HOME&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::K, ModifierFlag::EXTRA1, KeyCode::PAGEUP&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::L, ModifierFlag::EXTRA1, KeyCode::PAGEDOWN&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::SEMICOLON, ModifierFlag::EXTRA1, KeyCode::END&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::G, ModifierFlag::EXTRA1 | ModifierFlag::EXTRA2, KeyCode::VK_CONSUMERKEY_EJECT, ModifierFlag::CONTROL_L | ModifierFlag::SHIFT_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::D, ModifierFlag::EXTRA1 | ModifierFlag::EXTRA2, KeyCode::VK_CONSUMERKEY_EJECT, ModifierFlag::OPTION_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::S, ModifierFlag::EXTRA1 | ModifierFlag::EXTRA2, KeyCode::VK_CONSUMERKEY_EJECT, ModifierFlag::CONTROL_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::DELETE, ModifierFlag::EXTRA1 | ModifierFlag::NONE, KeyCode::ENTER&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::SHIFT_R, VK_SHIFT | ModifierFlag::NONE, KeyCode::VK_OPEN_URL_FINDER&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::SHIFT_R, VK_COMMAND, KeyCode::F17, ModifierFlag::SHIFT_L&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::MINUS, ModifierFlag::EXTRA1, KeyCode::VK_LOCK_EXTRA1&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::MINUS, ModifierFlag::NONE, KeyCode::BACKQUOTE, ModifierFlag::COMMAND_L&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ PointingButton::BUTTON4, KeyCode::PAGEDOWN&lt;/autogen&gt;
+    &lt;autogen&gt;__SimultaneousKeyPresses__ PointingButton::LEFT, PointingButton::RIGHT, KeyCode::L, ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__SimultaneousKeyPresses__ PointingButton::BUTTON4, PointingButton::BUTTON5, KeyCode::W, ModifierFlag::COMMAND_L&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F1, ModifierFlag::EXTRA1, KeyCode::F1, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F2, ModifierFlag::EXTRA1, KeyCode::F2, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F3, ModifierFlag::EXTRA1, KeyCode::F3, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F4, ModifierFlag::EXTRA1, KeyCode::F4, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CONTROL_L, KeyCode::F16, ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::ESCAPE, KeyCode::F17, ModifierFlag::CONTROL_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::E, ModifierFlag::EXTRA1, KeyCode::F13, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_3, ModifierFlag::EXTRA1, KeyCode::F13, ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_4, ModifierFlag::EXTRA1, KeyCode::F14, ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::KEY_5, ModifierFlag::EXTRA1, KeyCode::F15, ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::UK_SECTION, ModifierFlag::EXTRA1, KeyCode::F17, ModifierFlag::OPTION_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CURSOR_LEFT, ModifierFlag::EXTRA1, KeyCode::F18, ModifierFlag::OPTION_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CURSOR_RIGHT, ModifierFlag::EXTRA1, KeyCode::F19, ModifierFlag::OPTION_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::BACKQUOTE, ModifierFlag::EXTRA1, KeyCode::F16, ModifierFlag::OPTION_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::BACKQUOTE, ModifierFlag::EXTRA2, KeyCode::F16, ModifierFlag::CONTROL_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::UK_SECTION, ModifierFlag::EXTRA2, KeyCode::F17, ModifierFlag::CONTROL_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CURSOR_LEFT, ModifierFlag::EXTRA2, KeyCode::F18, ModifierFlag::CONTROL_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CURSOR_RIGHT, ModifierFlag::EXTRA2, KeyCode::F19, ModifierFlag::CONTROL_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::END, ModifierFlag::EXTRA1, KeyCode::F19, ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::HOME, ModifierFlag::EXTRA1, KeyCode::F18, ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::EQUAL, ModifierFlag::EXTRA1, KeyCode::F14, ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::DELETE, ModifierFlag::EXTRA1, KeyCode::F17, ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::FORWARD_DELETE, ModifierFlag::EXTRA1, KeyCode::F16, ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::OPTION_L, ModifierFlag::EXTRA1, KeyCode::F15, ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CONTROL_L, ModifierFlag::EXTRA2, KeyCode::F14, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::END, ModifierFlag::EXTRA2, KeyCode::F19, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::HOME, ModifierFlag::EXTRA2, KeyCode::F18, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::DELETE, ModifierFlag::EXTRA2, KeyCode::F17, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::FORWARD_DELETE, ModifierFlag::EXTRA2, KeyCode::F16, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::OPTION_L, ModifierFlag::EXTRA2, KeyCode::F15, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CONTROL_L, ModifierFlag::EXTRA2, KeyCode::F14, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::N, ModifierFlag::EXTRA1, KeyCode::F13, ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::D, ModifierFlag::EXTRA1, KeyCode::F13, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::G, ModifierFlag::EXTRA1, KeyCode::F14, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::TAB, ModifierFlag::NONE, KeyCode::F15, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CURSOR_UP, KeyCode::MINUS&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CURSOR_DOWN, KeyCode::EQUAL&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::BACKQUOTE, KeyCode::CURSOR_LEFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::UK_SECTION, KeyCode::CURSOR_UP&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::CURSOR_LEFT, KeyCode::CURSOR_DOWN&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::OPTION_L, KeyCode::ESCAPE&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::END, KeyCode::DELETE&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::FORWARD_DELETE, KeyCode::SPACE&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::DELETE, KeyCode::RETURN&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::EQUAL, KeyCode::BACKQUOTE&lt;/autogen&gt;
+  &lt;/item&gt;
+
+  &lt;appdef&gt;
+    &lt;appname&gt;EMACSAPP&lt;/appname&gt;
+    &lt;equal&gt;org.gnu.Emacs&lt;/equal&gt;
+  &lt;/appdef&gt;
+
+  &lt;item&gt;
+    &lt;identifier&gt;emacs&lt;/identifier&gt;
+    &lt;name&gt;emacs&lt;/name&gt;
+    &lt;only&gt;EMACSAPP&lt;/only&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::HOME, KeyCode::CONTROL_R&lt;/autogen&gt;
+  &lt;/item&gt;
+
+  &lt;item&gt;
+    &lt;identifier&gt;notemacs&lt;/identifier&gt;
+    &lt;name&gt;notemacs&lt;/name&gt;
+    &lt;not&gt;EMACSAPP&lt;/not&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::HOME, ModifierFlag::NONE, KeyCode::CONTROL_L, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::M, VK_COMMAND | ModifierFlag::NONE, KeyCode::M, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+  &lt;/item&gt;
+
+  &lt;item&gt;
+    &lt;identifier&gt;emacsmode&lt;/identifier&gt;
+    &lt;name&gt;emacsmode&lt;/name&gt;
+    &lt;not&gt;EMACSAPP&lt;/not&gt;
+    &lt;not&gt;TERMINAL&lt;/not&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::R, VK_CONTROL | ModifierFlag::NONE, KeyCode::CURSOR_UP&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::J, VK_CONTROL | ModifierFlag::NONE, KeyCode::CURSOR_DOWN&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::B, VK_CONTROL | ModifierFlag::NONE, KeyCode::CURSOR_LEFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::E, VK_CONTROL | ModifierFlag::NONE, KeyCode::CURSOR_RIGHT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::R, VK_CONTROL | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_UP, VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::J, VK_CONTROL | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_DOWN, VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::B, VK_CONTROL | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_LEFT, VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::E, VK_CONTROL | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_RIGHT, VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::B, VK_OPTION | ModifierFlag::NONE, KeyCode::CURSOR_LEFT, VK_OPTION&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::E, VK_OPTION | ModifierFlag::NONE, KeyCode::CURSOR_RIGHT, VK_OPTION&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::B, VK_OPTION | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_LEFT, VK_OPTION | VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::E, VK_OPTION | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_RIGHT, VK_OPTION | VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::R, VK_OPTION | ModifierFlag::NONE, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::J, VK_OPTION | ModifierFlag::NONE, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::R, VK_OPTION | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_UP, VK_SHIFT, KeyCode::CURSOR_UP, VK_SHIFT, KeyCode::CURSOR_UP, VK_SHIFT, KeyCode::CURSOR_UP, VK_SHIFT, KeyCode::CURSOR_UP, VK_SHIFT, KeyCode::CURSOR_UP, VK_SHIFT, KeyCode::CURSOR_UP, VK_SHIFT, KeyCode::CURSOR_UP, VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::J, VK_OPTION | VK_SHIFT | ModifierFlag::NONE, KeyCode::CURSOR_DOWN, VK_SHIFT, KeyCode::CURSOR_DOWN, VK_SHIFT, KeyCode::CURSOR_DOWN, VK_SHIFT, KeyCode::CURSOR_DOWN, VK_SHIFT, KeyCode::CURSOR_DOWN, VK_SHIFT, KeyCode::CURSOR_DOWN, VK_SHIFT, KeyCode::CURSOR_DOWN, VK_SHIFT, KeyCode::CURSOR_DOWN, VK_SHIFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::L, VK_CONTROL | ModifierFlag::NONE, KeyCode::TAB&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::G, VK_OPTION | ModifierFlag::NONE, KeyCode::FORWARD_DELETE, VK_OPTION&lt;/autogen&gt;
+
+    &lt;autogen&gt;__KeyToKey__ KeyCode::P, ModifierFlag::FN, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP, KeyCode::CURSOR_UP&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::N, ModifierFlag::FN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN, KeyCode::CURSOR_DOWN&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::B, ModifierFlag::FN, KeyCode::CURSOR_LEFT, KeyCode::CURSOR_LEFT, KeyCode::CURSOR_LEFT, KeyCode::CURSOR_LEFT, KeyCode::CURSOR_LEFT, KeyCode::CURSOR_LEFT, KeyCode::CURSOR_LEFT, KeyCode::CURSOR_LEFT&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F, ModifierFlag::FN, KeyCode::CURSOR_RIGHT, KeyCode::CURSOR_RIGHT, KeyCode::CURSOR_RIGHT, KeyCode::CURSOR_RIGHT, KeyCode::CURSOR_RIGHT, KeyCode::CURSOR_RIGHT, KeyCode::CURSOR_RIGHT, KeyCode::CURSOR_RIGHT&lt;/autogen&gt;
+  &lt;/item&gt;
+&lt;/root&gt;</code></pre>
+<h2>Notes</h2>
+<p><code>__KeyToConsumer__</code>, <code>__ConsumerToKey__</code>, <code>__ConsumerToConsumer__</code>, <code>__KeyToPointingButton__</code>, <code>__PointingButtonToKey__</code>, and <code>__PointingButtonToPointingButton__</code> can be replaced with <code>__KeyToKey__</code> starting from 9.3.0.</p>
+<p><code>Option::NOREPEAT</code> disables repeating a key.</p>
+<p>You can add delays with <code>KeyCode::VK_WAIT_10MS</code> and <code>KeyCode::VK_WAIT_100MS</code>.</p>
+<p><code>KeyCode::VK_IOHIDPOSTEVENT_NX_POWER_KEY</code> or <code>ConsumerKeyCode::POWER</code> is the power key or button.</p>
+<p>You can disable remapping pointing devices by enabling the &quot;Don't remap any pointing devices&quot; setting.</p>
+<p><code>KeyCode::RawValue::0x81</code> is key code 129.</p>
+<p>For example fn-J is mapped to numpad 1 by default unless you enable the &quot;Disable NumPad Hack&quot; setting.</p>
+<p>The &quot;Pass-Through Caps Lock LED Status&quot; setting disables the caps lock light on some keyboards.</p>
+<p><code>/Applications/Karabiner.app/Contents/Library/utilities/bin/warp-mouse-cursor-position front_window middle 0 center 0</code> moves the pointer to the center of the frontmost window.</p>

@@ -1,0 +1,608 @@
+## Convert ogg to mp3
+
+    while read f;do
+      ffmpeg -i "$f" -aq 2 "${f%ogg}mp3"
+      i=$(ogginfo "$f")
+      title=$(sed -n 's/^\tTITLE=//p'<<<"$i")
+      artist=$(sed -n 's/^\tARTIST=//p'<<<"$i")
+      album=$(sed -n 's/^\tALBUM=//p'<<<"$i")
+      track=$(sed -n 's/^\tTRACKNUMBER=//p'<<<"$i")
+      year=$(sed -n 's/^\tDATE=//p'<<<"$i"|cut -d. -f1)
+      mid3v2 -t "$title" -a "$artist" -A "$album" -T "$track" -y "$year" "${f%ogg}mp3"
+    done
+
+    # ffmpeg does not preserve tags when it converts ogg to mp3 even though it does preserve tags when it converts flac to mp3
+    # `pip install mutagen` installs `mid3v2`
+
+## Display a histogram of how many files in a directory have been modified each day
+
+    ql(){ qlmanage -p "$@"&>/dev/null; }
+    gpp(){ gnuplot -e "set term png;set output '/tmp/plot.png';$1";ql /tmp/plot.png; }
+    co(){ awk '{++a[$0]}END{PROCINFO["sorted_in"]="@val_num_asc";for(i in a)print a[i],i}'; }
+
+    find ~/dir -type f -printf %TF\\n|co|gpp 'set xdata time;set timefmt"%Y-%m-%d";set format x"%m-%d";set style fill solid;plot"-"u 2:1:(2)w boxes'
+
+    # you can use the `gpp` function to create and view a Gnuplot plot in OS X without needing to install XQuartz
+    # `set xdata time;set timefmt"%Y-%m-%d"` treats values on the x axis as times with the specified format
+    # `set format x"%m-%d"` changes the time format used for the labels of the x axis
+    # `set style fill solid` fills elements with a solid color instead of only drawing their outlines
+    # `plot"-"` uses data from STDIN
+    # `u` is short for `using` and `w` is short for `with`
+    # `u 2:1:(2)` uses the second column for the x axis and the first column for the y axis
+    # `u 2:1` without `:(2)` would require the input to be sorted and would use the value of the previous non-missing date for a missing date
+
+## Display a histogram of the distribution of file sizes
+
+    rmu(){ awk '{print$0+(n-$0%n)%n}' n=$1; }
+    co(){ awk '{++a[$0]}END{PROCINFO["sorted_in"]="@val_num_asc";for(i in a)print a[i],i}'; }
+    rw(){ jq --arg x "${1- }" -Rr './$x|reverse|join($x)'; }
+    ql(){ qlmanage -p "$@"&>/dev/null; }
+    gpp(){ gnuplot -e "set term png;set output'/tmp/plot.png';$1";ql /tmp/plot.png; }
+
+    stat -c%s *|rmu 1000|co|rw|gpp 'plot"-"'
+
+    # `rmu 1000` rounds each number on a list of numbers up to an integer multiple of 1000
+    # `co` is like `sort|uniq -c|sort -n|sed 's/ *//'`
+    # `rw` reverses words on each line
+
+## Download audiobooks
+
+    sed 's/^/magnet:?xt=urn:btih:/'<<<'e03443b78b9824d94c88c013ff1b6216743f5ae1&dn=ronda-rousey-my-fight-your-fight
+    47fc3d3d0f173eddc196170ca8308529bc171b76&dn=charles-bukowski-south-of-no-north
+    09f440cafd321bd6bc75603c0a7e4386f3e5d6d2&dn=charles-bukowski-women
+    168d719cf66841ec00d53aaf67ea33f21993c940&dn=charles-bukowski-5-audiobooks
+    edf77496de7b4dceb46b3799f29e79151cf0bc02&dn=jack-kerouac-on-the-road
+    0f755ac9defb8e1bc64d8d08a6e40e89e8f4d8da&dn=noam-chomsky-audio-collection
+    7a6f6dac6a5825da0f2c296f70dfd9288f91663e&dn=henry-miller-audio-collection
+    479d2a4b8b6c76dacbddef5fe198490a945bc127&dn=john-steinbeck-cannery-row
+    db2c4a9b82106ac418854b5631abc0bf00db6863&dn=homer-the-odyssey
+    3991da1f25faaf62eed964dff9ee5e98a9f74eec&dn=norm-macdonald-based-on-a-true-story
+    07505f024916ebfb3439d86300db9089d48f887b&dn=emile-zola-the-belly-of-paris
+    17e556ee093c764e486b054adace1545bdc2329f&dn=emile-zola-germinal
+    04beda4bebabef68326902536e1a8646e001aa80&dn=jules-verne-20-000-leagues-under-the-sea
+    ed2d732e4c64e783a8747b8361ed067f21bf3c44&dn=jules-verne-around-the-world-in-eighty-days
+    d9bf0ccfa8dfd5254508524bc96e0bc2cd87fc60&dn=giovanni-boccaccio-the-decameron
+    6d031cdfcb92d93d79c2062c77e788cde94edcef&dn=heinrich-harrer-seven-years-in-tibet
+    3ce5c93a5e2c5a023c7ebefa33e60b020c4b65bf&dn=edward-gibbon-the-history-of-the-decline-and-fall-of-the-roman-empire
+    3d95a53ead1416c0d9ee98a852216dc432d947e6&dn=jean-jacques-rousseau-the-confessions
+    50590fc1be6d9a5cef81ea2373625bb7414fcc50&dn=aristotle-politics
+    85f4504cd101129cf27f6efe8549c9b5f17ef0cc&dn=plutarch-lives-of-the-noble-greeks-and-romans
+    fc23e237c4d06551986ccc7ab41c4331591690de&dn=marcus-tullius-cicero-selections-from-the-writings-of-cicero
+    73c95720a37060dc1c98aa5e181c00f18fc6d806&dn=jonathan-swift-gulliver-s-travels
+    778412790aed23408a7b0bea35b17d27f26da7e8&dn=alexandr-solzhenitsyn-one-day-in-the-life-of-ivan-denisovich
+    300033170f47cf19ea630db77136207634ef1096&dn=bertrand-russell-a-history-of-western-philosophy
+    d09984387f9df6832bd4073aa637ec70f7d1e9cc&dn=charles-darwin-on-the-origin-of-species
+    c58923b4b728abf7cc38fdae366df9ce3ae193f8&dn=jules-verne-from-the-earth-to-the-moon
+    a89017580e2f616a6cabfc692f1fe16547b6c910&dn=benedict-de-spinoza-ethics
+    8383d3a44b4a0f2cc599fcb4b5ec6f21b0d6ca32&dn=jules-verne-journey-to-the-center-of-the-earth
+    9ab8b43b34662884b4a48a420ac9d3db64858b73&dn=daniel-defoe-the-journal-of-the-plague-year
+    699e0c6662fca08b05f58fdc9e49abc9806b6c0b&dn=daniel-defoe-robinson-crusoe
+    28aa25f1a5afc47ecb3ffa38a003c787ecbe2140&dn=herman-melville-moby-dick
+    9169a94c7c4f947b7bea65df81cf715e45ab5bea&dn=plato-the-republic
+    36fce1d4ab637cba24b95883b33522e6302f5af7&dn=lucretius-on-the-nature-of-things
+    8b635dd3cef86c71ec00b1e061b1b025ad9723d3&dn=herodotus-the-histories
+    bb7c776445679995ff8025cedbc46bb4a99efdbe&dn=vladimir-nabokov-lolita
+    10e9c05ab76b57d02ff29672be3d6e61e689bf5b&dn=aleksandr-solzhenitsyn-the-gulag-archipelago
+    9dbbf0540b5b72a3138c267255bc7be97592d333&dn=aristotle-nicomachean-ethics
+    3ffc74d0c61ca85aa33de24fb7912fb7baf88cc3&dn=mark-twain-roughing-it
+    b16b14e678d6fb2794201cd8cfe18c3782ac5d32&dn=mark-twain-the-adventures-of-tom-sawyer
+    0e61f717788f4134c172a97b26627e7e095d3fd6&dn=j-r-r-tolkien-the-hobbit
+    3f38fac1b344b81042956847e541f593ae91f4a0&dn=noam-chomsky-necessary-illusions
+    53db25a4d5ca57802cefd7f261df9c7131f52060&dn=henry-miller-tropic-of-cancer'|xargs open
+
+## Download darkpsy albums with a rating of 95% or higher from Ektoplazm
+
+    seq 80|parallel curl -s www.ektoplazm.com/style/darkpsy/page/{}|grep -Po '<a href="\K([^"]+)(?=">MP3 Download)|Rated <strong>\K([^%]+)'|paste -d\  - -|awk '$2>=95{print$1}'|parallel wget
+
+## Process files in a music directory to extract archives, convert files in formats like flac to mp3, split files with cue files, and to remove playlist files
+
+    shopt -s globstar extglob nocaseglob
+    alias p='printf %s\\n' ,=parallel
+
+    p ~/Music/**/*.@(rar|zip)|, cd {//}\;unar -s -p \'\' {}\;rm {}
+    p ~/Music/**/*.@(flac|ogg|ape|wma|wav|aif|aiff)|, ffmpeg -i {} -aq 2 {.}.mp3\;rm {}
+    p ~/Music/**/*.cue|, mp3splt -c {} {.}.mp3\;rm {}\;rm {.}.mp3
+
+    rm ~/Music/**/*.@(pls|m3u|m3u8)
+
+    # `cd {//}\;` is like `-execdir` in `parallel`
+    # `unar` is a command line version of The Unarchiver
+    # `mp3splt -c file.cue file.mp3` splits an mp3 file with a cue file
+
+## Generate a simple static website from Markdown files
+
+    template='<!doctype html>
+    <meta charset="utf-8">
+    <meta http-equiv="content-language" content="en">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>'"$(xml esc<~/d/site/osx.css)</style>"
+
+    rm ~/Sites/osx/*.html
+
+    for f in ~/d/osx/*.md;do
+      base=${f##*/}
+      title=$(head -n1 $f|cut -c3-)
+      (echo "$template<title>$title</title>";pandoc -f markdown_strict $f)>~/Sites/osx/${base%md}html
+      index+="<a href=\"${base%md}html\">$title</a>"$'\n'
+    done
+
+    echo "$template<p>$(echo "$index"|sort -t\> -fk2|sed '$!s/$/<br>')</p>">~/Sites/osx/index.html
+
+## Generate an HTML file for reading answers posted by a Stack Exchange user
+
+    html(){ local f=/tmp/$(date +%s%3N).html;cat>$f;open $f; }
+
+    curl -s 'https://api.stackexchange.com/2.2/users/22565/answers?site=unix&page=1&pagesize=100&filter=!-.mgWMP7sO7J'|gzip -d|jq -r '.items[]|"<h2><a href="+.link+">"+.title+"</a></h2>"+.body'|html
+
+    # see https://api.stackexchange.com/docs/answers-on-users for documentation
+    # the filter parameter includes the bodies of answers as HTML
+    # another user at unix.stackexchange with good answers is Gilles (user ID 885)
+    # Stefan Monnier who used to be the head maintainer of Emacs is user ID 1979 at emacs.stackexchange
+
+## Generate an HTML file for reading answers to Stack Overflow questions with a specific tag
+
+    api=https://api.stackexchange.com/2.2
+    site=stackoverflow
+    ids=$(curl -s "$api/search?site=$site&sort=votes&tagged=jq&pagesize=100&page=1"|gzip -d|jq -r '.items[].question_id')
+    curl -s "$api/questions/${ids//$'\n'/;}/answers?site=$site&sort=votes&pagesize=100&filter="\!--btTLjIVxsJ|gzip -d|jq -r '.items[]|"<h2><a href="+.link+">"+.title+"</a></h2>"+.body'>/tmp/se.html
+    open /tmp/se.html
+
+## Make a list of commands with a score of 2 or higher out of the 1000 newest commands at commandlinefu
+
+    curl -s www.commandlinefu.com/commands/browse/sort-by-date/json/{0..975..25}|jq -r '.[]|select(.votes|tonumber>=2)|"# "+.summary+"\n"+.command+"\n"'
+
+## Make a list of links posted to a subreddit and open the ten newest unread links with a score of 5 or higher
+
+    o2(){ awk 'ARGIND==1{a[$0];next}!($0 in a)&&!b[$0]++' "$1" "${2--}"; }
+
+    after=
+    for i in {1..10};do
+      r=$(curl "https://api.reddit.com/r/emacs/new?limit=100&after=$after")
+      jq -r '.data.children[].data|select(.is_self==false)|(.score|tostring)+" "+.url'<<<"$r"
+      after=$(jq -r .data.after<<<"$r")
+    done>reddittoread
+
+    touch redditseen;awk '$1>=5{print$2}' reddittoread|o2 redditseen|head|tee -a redditseen|xargs open
+
+## Make a list of man pages to read
+
+    sbc(){ awk '{++a[$0]}END{PROCINFO["sorted_in"]="@val_num_asc";for(i in a)print i}'; }
+    o3(){ awk 'ARGIND==1{a[$0];next}$0 in a&&!b[$0]++' "$1" "${2--}"; }
+
+    history|grep -Eo \\w+|sbc|tac|o3 <(compgen -c)|while read l;do whereis $l&>/dev/null&&echo $l;done|head -n200
+
+    # `compgen -c` lists the names of commands in bash
+    # `sbc` (sort by count) is like `sort|uniq -c|sort -n|sed 's/ *[^ ]* //'`
+
+## Make a list of the URLs of all images posted by a Flickr user
+
+    url="https://api.flickr.com/services/rest/?api_key=$flickrapi&format=json&method=flickr.people.getPublicPhotos&user_id=$userid&extras=url_o,url_l&per_page=500&page="
+    page=1
+    while :;do curl $url$page|sed 's/jsonFlickrApi(\(.*\))/\1/'|jq -er '.photos.photo[].url_l'||break;let page++;done
+
+    # `url_l` is at most 1024 by 1024 pixels and `url_o` is the original size
+
+## Make a list of the URLs of photos posted by an Instagram user
+
+    max=
+    while :;do
+      c=$(curl -s "https://www.instagram.com/username/?__a=1&max_id=$max")
+      jq -r '.media.nodes[]?|.display_src'<<<"$c"
+      max=$(jq -r .user.media.page_info.end_cursor<<<"$c")
+      jq -e .user.media.page_info.has_next_page<<<"$c">/dev/null||break
+    done
+
+## Open a search URL
+
+    q=$@
+
+    if [[ -z $q ]];then
+      touch ${TMPDIR}urlalias
+      q=$(osascript -e'on run{a}' -e'text returned of(display dialog""default answer a)' -eend -- "$(<${TMPDIR}urlalias)")
+      [[ $q ]]||exit
+      printf %s "$q">${TMPDIR}urlalias
+    fi
+
+    search=https://google.com/search?q=
+
+    if [[ $q = \ * ]];then
+      url=$search$(jq -rR @uri<<<"${q:1}")
+    else
+      q1=${q%% *}
+      q2=${q#"$q1"}
+      q2=${q2# }
+      found=
+      while read l;do [[ $l = "$q1 "* ]]&&{ found=$l;break; };done<~/n/urls
+      if [[ $found ]];then
+        url=${found#* }
+        url=${url//\%s/$(jq -rR @uri<<<"$q2")}
+      else
+        url=$search$(jq -rR @uri<<<"$q")
+      fi
+    fi
+
+    [[ $url ]]&&open "$url"
+
+    # `~/n/urls` contains lines like `bt https://btdb.in/q/%s/`
+
+## Parts of my .bashrc
+
+    shopt -s checkwinsize cmdhist expand_aliases extglob globstar histappend no_empty_cmd_completion nocaseglob
+
+    PS1='\[\e[30;47m\]\W\[\e[0m\] ' SUDO_PS1='# '
+    PROMPT_COMMAND='history -a;history -n'
+    HISTFILESIZE= HISTSIZE= HISTFILE=~/.h HISTCONTROL=ignoredups
+
+    export LANG=en_US.UTF-8
+    export LESS='-j .5 -~'
+
+    agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10) AppleWebKit/600.1.25 (KHTML, like Gecko) Version/8.0 Safari/600.1.25'
+
+    alias p='printf %s\\n'
+    alias e='xargs -rd\\n'
+    alias ,=parallel
+    alias ~=sponge
+    alias g='grep -Pa'
+    alias .r='. ~/.bashrc;bind -f ~/.inputrc'
+    alias df='df -h'
+    alias du='du -h'
+    alias htop='htop -d 30'
+    alias ls='ls -p'
+    alias wget='wget -q --no-check-certificate --content-disposition -e robots=off -c'
+    alias curl='curl -sL'
+    alias m='mkdir -p'
+    alias rm='rm -f'
+    alias cp='cp -R'
+    alias ll="ls -lAph --time-style '+%F %T'"
+    alias nfc='uconv -f utf-8 -t utf-8 -x NFC'
+    alias nfd='uconv -f utf-8 -t utf-8 -x NFD'
+    alias a=awk
+    alias w='wc -l'
+    alias cs='LC_ALL=C sort'
+
+    if [[ -t 0 && -z $INSIDE_EMACS ]];then
+      runline(){ local x=$(eval "$READLINE_LINE");x=${x//$'\n'};READLINE_LINE=$x;READLINE_POINT=${#x}; }
+      pastewithoutnewlines(){ local x=$(pbpaste);x=${x//$'\n'};READLINE_LINE=${READLINE_LINE::READLINE_POINT}$x${READLINE_LINE:READLINE_POINT};let READLINE_POINT+=${#x}; }
+
+      bind -x '"\C-xc":printf %s "$READLINE_LINE"|pbcopy'
+      bind -x '"\C-xx":printf %s "$READLINE_LINE"|pbcopy;READLINE_LINE='
+      bind -x '"\C-xa":printf %s "${READLINE_LINE:0:READLINE_POINT}"|pbcopy'
+      bind -x '"\C-xe":printf %s "${READLINE_LINE:READLINE_POINT}"|pbcopy'
+      bind -x '"\er":runline'
+      bind -x '"\ev":pastewithoutnewlines'
+      bind -x '"\eo":READLINE_LINE=$(tac ~/.h|fzf +s -e);READLINE_POINT=${#READLINE_LINE}'
+      bind -x '"\e\C-l":printf \\e\]50\;ClearScrollback\\a';bind '"\C-l":"\e\C-l\C-j"'
+      bind -x '"\e;":ps -ef|sed 1d|fzf -m -e +s|a '{print$1}'|e kill'
+
+      /bin/stty discard undef
+      stty -ixon
+    fi
+
+    ai(){ if [ $# -ge 1 ];then p "$@";else cat;fi; }
+    -(){ printf %s "$@"; }
+    c(){ cd "$@"&&ls; }
+    h(){ if [ $# = 0 ];then history 50;else history|grep -iFe "$1";fi|sed 's/^ *[^ ]*  //;/^h /d'; }
+    u(){ a '!a[$0]++' "$@"; }
+    ur(){ tac "$@"|u|tac; }
+    z(){ /usr/bin/cut -d"${1:0:1}" -f"${1:1}" "${@:2}"; }
+    zr(){ rev|z "$1"|rev; }
+    s(){ local x=$(cat) i a;for((i=1;i<=$#;i++));do a=${!i};let i++;x=${x//"$a"/${!i}};done;p "$x"; }
+    r(){ ruby -e's=STDIN.read;ARGV.each_slice(2){|x,y|s.gsub!(Regexp.new(x),y||"")};puts s' -- "$@"; }
+    dt(){ cd ~/Desktop; }
+    rd(){ rm -rf ~/Desktop/*; }
+    mc(){ m "$1";cd "$1"; }
+    pg(){ local ps=$(ps -ef) x;for x;do p "$ps"|grep -iF -- "$x";done; }
+    a0(){ a -e'ARGIND==1{a[$0];next}' -e"$@"; }
+    r2(){ a0 '!($0 in a)' "$1" "${2--}"; }
+    r3(){ a0 '$0 in a' "$1" "${2--}"; }
+    o2(){ r2 "$1" "${2--}"|u; }
+    o3(){ r3 "$1" "${2--}"|u; }
+    /(){ r2 - "$1"|~ "$1"; }
+    inter(){ a0 '{b[$0];if($0 in a&&$0 in b)c[$0]}END{la=length(a);lb=length(b);lc=length(c);print la-lc,lb-lc,lc"\n"la,lb"\n"NR-FNR,FNR}' "$1" "${2--}"; }
+    prep(){ [[ -e $1 ]]||>"$1";cat - "$1"|~ "$1"; }
+    ua(){ [[ -e $1 ]]||>"$1";u "$1" -|~ "$1"; }
+    n(){ local x=${1/#,/1,};sed -n "${x/%,/,$}"p; }
+    rn(){ tac|n "$1"|tac; }
+    rf(){ ai "$@"|e readlink -f; }
+    l(){ local l;ai "$@"|while IFS= read -r l;do p "$l"/*;done|rf; }
+    l2(){ local l;ai "$@"|while IFS= read -r l;do ls "$l";done; }
+    l0(){ local l;ai "$@"|while IFS= read -r l;do p "${l%/}"/**/*;done; }
+    f1(){ local n=$(($#+1)) i;for((i=1;i<=$#;i++));do if [[ ${!i} = -* ]];then n=$i;break;fi;done;find "${@:1:n-1}" -mindepth 1 -maxdepth 1 "${@:n}"; }
+    sn(){ ai "$@"|e stat -c'%s %n'; }
+    tn(){ ai "$@"|e stat -c'%Y %n'; }
+    an(){ ai "$@"|e stat -c'%X %n'; }
+    sbs(){ sn "$@"|sort -n|z \ 2-; }
+    sbt(){ tn "$@"|sort -n|z \ 2-; }
+    sba(){ an "$@"|sort -n|z \ 2-; }
+    age(){ tn "$@"|a 'BEGIN{d=systime()}{print d-$1,$0}'|z \ 1,3-; }
+    exi(){ e ls -1d -- 2>/dev/null; }
+    nexi(){ local x=$(cat);p "$x"|o2 <(p "$x"|exi); }
+    mi(){ a '++a[$0]=='$1; }
+    ma(){ local x=$(cat);p "$x"|o2 <(p "$x"|a '++a[$0]>'$1); }
+    nf(){ local l;ai "$@"|while IFS= read -r l;do p "$(ls -f -- "$l"|w|= -2) $l";done; }
+    nf2(){ ai "$@"|e stat -c'%h %n' --; }
+    iu(){ local f;for f;do u "$f"|~ "$f";done; }
+    down(){ "$@"&>/dev/null&disown; }
+    eu(){ jq -Rr @uri; }
+    eu2(){ eu|sed s,%2F,/,g; }
+    uu(){ local l;while IFS= read -r l;do printf %b\\n "${l//%/\\x}";done; }
+    uh(){ recode html; }
+    xe(){ recode ..xml; }
+    xu(){ recode xml; }
+    dumb(){ sed $'s/[\u201c\u201d]/"/g;s/[\u2018\u2019]/\'/g;s/[\u2013\u2014]/-/g;s/\u2026/.../g'; }
+    smart(){ smartypants|uh; }
+    f(){ local l;while IFS= read -r l;do p "${1//"${2-,}"/$l}";done; }
+    ff(){ local l;while IFS= read -r l;do - "${1//"${2-,}"/$l}";done; }
+    html(){ local f=/tmp/$(date +%s%3N).html;cat>$f;open $f; }
+    im(){ sed s,^/,file:///,|ff '<a href=,><img src=,></a>'|pre "<style>body{text-align:center}img{height:${1-calc(50% - 20px)}}</style>"|html; }
+    videos(){ f '<video controls><source src=,></video>'|html; }
+    dl(){ local f;for f in "${@:2}";do head -n-$1 "$f"|~ "$f";done; }
+    aa(){ x="$1" a '{print ENVIRON["x"]$0}'; }
+    ee(){ x="$1" a '{print$0 ENVIRON["x"]}'; }
+    pre(){ p "$1";cat; }
+    app(){ cat;p "$1"; }
+    lc(){ tr '[:upper:]' '[:lower:]'; }
+    uc(){ tr '[:lower:]' '[:upper:]'; }
+    co(){ a '{++a[$0]}END{PROCINFO["sorted_in"]="@val_num_asc";for(i in a)print a[i],i}'; }
+    cco(){ a '{++a[$0]}END{for(i in a)++b[a[i]];for(i in b)print b[i],i}'; }
+    sbc(){ a '{++a[$0]}END{PROCINFO["sorted_in"]="@val_num_asc";for(i in a)print i}'; }
+    sbl(){ a '{print length,$0}'|sort -n|z \ 2-; }
+    pass(){ grep -iF "$1" ~/n/pass|tee >(a 'END{printf"%s",$NF}'|pbcopy); }
+    apd(){ cat "${@:2}">>"$1";rm "${@:2}"; }
+    wcu(){ a '{a[$0]}END{print NR,length(a)}' "${@--}"; }
+    eo(){ cat>"$1";open -aemacs "$1"; }
+    part(){ x="$1" a '{if($0~ENVIRON["x"])print;else x=x$0"\n"}END{printf"%s",x}'; }
+    partn(){ x="$1" a '{if($0!~ENVIRON["x"])print;else x=x$0"\n"}END{printf"%s",x}'; }
+    res(){ ai "$@"|, -k -j10 curl -ILso /dev/null -w '%{url_effective}\\n'; }
+    res2(){ ai "$@"|, --tag -k -j10 curl -ILso /dev/null -w '%{url_effective}\\n'|tr \\t \ ; }
+    h10(){ tail ~/n/htoread|opens;dl 10 ~/n/htoread; }
+    rmm(){ local f;for f;do rm -rf "$f";m "$f";done; }
+    scroll(){ pre '<style>body{font:20px Times;width:25em;margin:0 auto;line-height:1.2}</style>'>/tmp/scroll.html;o /tmp/scroll.html; }
+    j(){ local x=$(cat);p "${x//$'\n'/$1}"; }
+    sd(){ local x=$(cat);p "${x//"$1"/$'\n'}"|sort|j "$1"; }
+    td(){ local x=$(cat);p "${x//"$1"/$'\n'}"|tac|j "$1"; }
+    sortw(){ g -o \\S+|sort|j \ ; }
+    uniqw(){ g -o \\S+|u|j \ ; }
+    shufw(){ g -o \\S+|shuf|j \ ; }
+    revw(){ g -o \\S+|tac|j \ ; }
+    sortc(){ g -o .|sort|j; }
+    uniqc(){ g -o .|u|j; }
+    shufc(){ g -o .|shuf|j; }
+    hm(){ pandoc -f html -t markdown_strict --no-wrap --atx-headers; }
+    mh(){ pandoc -f markdown_strict|sed 's,<pre><code>,<pre>,;s,</code></pre>,</pre>,'; }
+    study(){ a '{if(/^([sonchjbe$S]|en|ei|el|er|ec) /){print|c}else{x=x$0"\n"}}END{close(c);printf"%s",x}' c='sort -sk1,1'; }
+    es(){ local l;while IFS= read -r l;do p "$l";sleep $1;done; }
+    cr(){ rev|cut -c"$1"|rev; }
+    rr(){ a -F"$1" '{print$NF}'; }
+    rl(){ a -F"$1" NF-- OFS="$1"; }
+    mp3(){ , -j-1 ffmpeg -i {} -aq 2 {.}.mp3; }
+    mt(){ e mv -t"$@"; }
+    ct(){ e cp -Rt"$@"; }
+    od2(){ a -F/ 'ARGIND==1{a[$NF];next}!($NF in a)' "$1" "${2--}"; }
+    od3(){ a -F/ 'ARGIND==1{a[$NF];next}$NF in a' "$1" "${2--}"; }
+    iwh(){ ai "$@"|e identify -format '%w %h %i\n'; }
+    scho(){ local l;ai "$@"|while IFS= read -r l;do curl -G -A mozilla --data-u "q=$l" https://scholar.google.com/scholar|pup '.gs_rt a attr{href}'|head -n1;done|opens; }
+    sl() { sed 's/^[ \t]*//'; }
+    sr() { sed 's/[ \t]*$//'; }
+    sb() { sed 's/^[ \t]*//;s/[ \t]*$//'; }
+    @ (){ g -io $1'="\K[^"]+'; }
+    afc(){ a '{a[$'$1']++;b[$'$1'][NR]=$0}END{for(i in a)for(j in b[i])print a[i],b[i][j]}' "${2+FS=}$2"; }
+    sfc(){ afc "$@"|sort -snk1,1|z \ 2-; }
+    curla(){ curl -A "$agent" "$@"; }
+    wgeta(){ wget -U "$agent" "$@"; }
+    uf(){ a \!a\[\$$1\]++ "${2+FS=}$2"; }
+    rw(){ jq --arg x "${1- }" -Rr './$x|reverse|join($x)'; }
+    sp(){ a '{$1=$1}1'; }
+    d-(){ sed "1,/$(sed 's,[][/.*\],\\&,g'<<<"$1")/d"; }
+    d+ (){ sed "/$(sed 's,[][/.*\],\\&,g'<<<"$1")/Q"; }
+    yx()(cd ~/Music/youtube;ai "$@"|, youtube-dl -x --audio-format aac)
+    ind(){ sed s/^/"$(printf %${1-4}s)"/; }
+    s+ (){ e stat -c'%s %n'|a '$1>='$1|z \ 2-; }
+    s-(){ e stat -c'%s %n'|a '$1<='$1|z \ 2-; }
+    rmu(){ a '{print$0+(n-$0%n)%n}' n=$1; }
+    ~~(){ ~ /dev/stdout; }
+    wt(){ tee >(w>/dev/tty)|~~; }
+    a2(){ a -e"ARGIND==1{$1;next}$2" "${@:3}"; }
+    regs(){ e stat -c%F,%n|a -F, '$1=="regular file"||$1=="empty regular file"'|z ,2-; }
+    dirs(){ e stat -c%F,%n|sed -n s/^directory,//p; }
+    a1(){ a -e'ARGIND==1{a[$1]=$2;next}' -e"$@"; }
+    na(){ a 1 >>~/n/$1; }
+    =(){ a "{\$0${1:0:1}=${1:1}}1" "${@:2}"; }
+    ie(){ x="$1" a '1;END{if(NR==0)print ENVIRON["x"]}'; }
+    64d(){ ai "$@"|a -M 'NR==FNR{a[$0]=NR-1;next}{o=0;for(i=NF;i>=1;i--)o+=a[$i]*64^(NF-i);print o}' FS= <(p {A..Z} {a..z} {0..9} - _) -; }
+    d64(){ ai "$@"|a -M 'NR==FNR{a[NR-1]=$0;next}{o="";for(n=$0;n!=0;n=int(n/64))o=a[n%64]o;print o}' <(p {A..Z} {a..z} {0..9} - _) -; }
+    hw(){ sed -n '1p;$=' "${1--}"; }
+    ru(){ tac "$@"|u|tac; }
+    rz(){ convert -filter lanczos2 -resize "$@"; }
+    tt(){ tee /dev/tty|~~; }
+    ce(){ local x=;while [[ -z $x ]];do x=$(curl "$@");done;p "$x"; }
+    g0(){ ai "$@"|eu|aa https://www.google.com/search?q=|opens; }
+
+    alias pp=pbpaste
+    alias pc=pbcopy
+    alias tarc='COPYFILE_DISABLE= tar --exclude .DS_Store -c'
+    alias et='sudo rm -rf ~/.Trash;mkdir ~/.Trash'
+    alias karabiner=/Applications/Karabiner.app/Contents/Library/bin/karabiner
+    alias rpx='karabiner reloadxml'
+    alias em='open -aemacs'
+    alias op='open -aadobe\ photoshop\ cs6'
+    alias ox='open -agoogle\ chrome'
+    alias tms='tmutil startbackup'
+    alias mn='mdfind -name'
+    alias os=osascript
+    export COPYFILE_DISABLE=
+    x(){ ai "$@"|, -j-1 unar; }
+    ql(){ qlmanage -p "$@"&>/dev/null; }
+    gpp(){ gnuplot -e "set term png;set output'/tmp/plot.png';$1";ql /tmp/plot.png; }
+    hi(){ mdfind "$1" -onlyin ~/Library/Caches/Metadata/Safari/History|e mdls -nkMDItemURL|z \"2; }
+    hi-(){ hi "kMDItemFSContentChangeDate>\$time.now(-$1)"; }
+    sjs(){ os -e'on run{a}' -e'tell app"safari"to do javascript a in document 1' -eend "$1"; }
+    sjss(){ os -e'on run{a}' -e'set out to""' -e'tell app"safari"to repeat with t in(get tabs of window 1)' -e'set out to out&(do javascript a in t)&linefeed' -eend -eout -eend "$1"; }
+    sso()(os -e'tell app"safari"to source of document 1')
+    ss(){ sjs document.body.innerHTML; }
+    sss(){ sjss document.body.innerHTML; }
+    st(){ os -e'set text item delimiters to linefeed' -e'tell app"safari"to(url of tabs of window 1)as text'|sed s,^file://,,; }
+    s1(){ os -e'tell app"safari"to url of document 1'|sed s,^file://,,; }
+    sc(){ os -e'tell app"safari"to close window 1'; }
+    scm(){ os -e'on run{a}' -e'tell app"safari"to close tabs of window 1 whose url contains a' -eend "$1"; }
+    no(){ os -e'on run{a}' -e'display notification""with title a' -eend "${1-notification}"; }
+    copy(){ os -e'on run{a}' -e'set the clipboard to posix file a' -eend "$(readlink -f "$1")"; }
+    fs(){ os -e'set l to{}' -e'tell app"finder"to repeat with f in(get selection)' -e'set end of l to posix path of(f as alias)' -eend -e'set text item delimiters to linefeed' -e'l as text'; }
+    itt(){ os -e'set text item delimiters to linefeed' -e'tell app"itunes"' -e'set l to{}' -e'repeat with t in(get selection)' -e'set end of l to posix path of(get location of t)' -eend -eend -e'l as text'; }
+    cf(){ cd "$(os -e'tell app"finder"to posix path of(insertion location as alias)')"; }
+    quit(){ os -e'on run a' -e'repeat with x in a' -e'quit app x' -eend -eend "$@"; }
+    qo(){ local x;for x;do quit "$f";open -Fa"$x";done; }
+    ko(){ local x;pkill -xi "$@";for x;do open -Fa"$x";done; }
+    lsda(){ ai "$@"|e mdls -rnkMDItem{DateAdded,Path}|tr \\0 \\n|paste -d\  - -; }
+    lsdo(){ ai "$@"|e mdls -rnkMDItem{LastUsedDate,Path}|tr \\0 \\n|paste -d\  - -; }
+    sbda(){ lsda "$@"|sort -r|z \ 4-; }
+    sbdo(){ lsdo "$@"|sort -r|z \ 4-; }
+    lswf(){ ai "$@"|e mdls -nkMDItemWhereFroms; }
+    pcn(){ - "$(cat)"|pc; }
+    o(){ ai "$@"|e open; }
+    opens(){ local l;while IFS= read -r l;do open "$l";sleep ${1-0.5};done; }
+    ima(){ local l;ai "$@"|while IFS= read -r l;do printf "\e]1337;File=inline=1:$(if [[ $l = *://* ]];then curl "$l";else cat "$l";fi|base64)\a\n";done; }
+    cl(){ printf '\e]50;ClearScrollback\a'; }
+    a-(){ mdfind "kMDItemDateAdded>\$time.now(-$1)" -onlyin "${2-.}"; }
+    af(){ ai "$@"|while read l;do afplay -v 0.5 "$l";done; }
+    n1(){ s1 >>~/n/$1; }
+    clip(){ sqlite3 ~/Library/Application\ Support/Alfred\ 2/Databases/clipboard.alfdb 'select replace(item,"\\","\\\\")||"\\0"from clipboard'|perl -pe's/\\0/\0/g;s/\\\\/\\/g'|{ [[ $1 ]]&&grep -zZF "$@"; }|a 1; }
+
+## Parts of my .inputrc
+
+    set completion-ignore-case on
+
+    set show-all-if-ambiguous on
+
+    set completion-query-items 0
+
+    set page-completions off
+
+    # Do not include files whose name starts with a period in completion
+    # results unless the period is included in the text being completed.
+    set match-hidden-files off
+
+    # Do not modify the history list after editing and running a command
+    # from the history list.
+    set revert-all-at-newline on
+
+    # Restore the position of the point when selecting a command ran in
+    # the current shell from the history list.
+    set history-preserve-point on
+
+    # Cycle through history entries that start with the text before the
+    # point.
+    "\ep":history-search-backward
+    "\en":history-search-forward
+
+    # Cycle through completions. These are also useful for inserting the
+    # last or first completion.
+    "\es":menu-complete-backward
+    "\et":menu-complete
+
+    # Cut and copy.
+    "\eq":kill-region
+    "\ew":copy-region-as-kill
+
+    # Insert the zeroth, first, or second argument of the previous command.
+    "\ek":"\e0\e."
+    "\em":"\e1\e."
+    "\e,":"\e2\e."
+
+    "\ea":"\C-a\C-k"
+
+    # Insert the last word of the current line. `!#` is the current line,
+    # `:$` is the last word, and `\e^` is `history-expand-line`.
+    "\ej":"!#:$\e^"
+
+    "\ez":shell-backward-word
+    "\ex":shell-forward-word
+
+    # Kill a shell word. `\C-o` is used to toggle discarding pending input
+    # in OS X without `stty discard undef`. I have not bound
+    # `shell-backward-kill-word` because `\C-w` already deletes a
+    # whitespace-delimited word backward.
+    "\C-o":shell-kill-word
+
+    "\C-xl":"while read l;do ;done\C-b\C-b\C-b\C-b\C-b"
+    "\C-xn":">/dev/null"
+
+## Rename mp3 files based on their tags and remove all tags except the specified tags
+
+    d=~/Music/dir
+
+    for f in "$d"/**/*.mp3;do
+      l=$(mid3v2 -l "$f")
+      n=$(sed -n 's,^TRCK=\([^/]*\).*,\1,p'<<<"$l")
+      mv "$f" "${f%/*}/$(echo "$(printf %02d $n) $(sed -n 's,^TPE1=\([^/]*\).*,\1,p'<<<"$l") - $(sed -n 's,^TIT2=\(.*\),\1,p'<<<"$l").mp3"|tr '":/?<>\\*|' _)"
+    done
+
+    mid3v2 --delete-frames $(mid3v2 -l "$d"/**/*.mp3|LC_ALL=C sed -n 's,^\([^=]*\)=.*,\1,p'|sort -u|grep -Exv 'TPE1|TIT2|TALB|TRCK|TYER|TDRC|APIC|TPE2'|paste -sd, -) "$d"/**/*.mp3
+
+    # `pip install mutagen` installs `mid3v2`
+    # `id3v2` and `id3tag` do not support Unicode and `id3tool` does not support ID3v2 but `mid3v2` supports both
+    # `tr '"*/:<>?\\|' _` replaces forward slashes and characters that are not legal in filenames in Windows with an underscore
+
+## Run a countdown timer
+
+    if [[ $1 =~ ^[0-9]+$ ]];then
+      seconds=$(($1*60))
+    elif [[ $1 =~ ^([0-9]+):([0-9]+)$ ]];then
+      seconds=$((BASH_REMATCH[1]*60+BASH_REMATCH[2]))
+    elif [[ $1 =~ ^([0-9]+):([0-9]+):([0-9]+)$ ]];then
+      seconds=$((BASH_REMATCH[1]*3600+BASH_REMATCH[2]*60+BASH_REMATCH[3]))
+    fi
+
+    end=$(($(printf '%(%s)T')+seconds))
+
+    while :;do
+      now=$(printf '%(%s)T')
+      if [[ -z $prev || $now != $prev ]];then
+        left=$((end-now))
+        display=$(printf %02d:%02d:%02d\\n $((left/3600)) $((left%3600/60)) $((left%60)))
+        printf "\e[2K\r${display#00:}"
+        prev=$now
+      fi
+      [[ $now = $end ]]&&break
+      sleep 0.1
+    done
+
+    echo
+    afplay /System/Library/PrivateFrameworks/ScreenReader.framework/Versions/A/Resources/Sounds/DrillOut.aiff&
+    osascript -e'display notification""with title"timer"'
+
+    # `printf '%(%s)T'` prints the current time in bash 4.3 and later
+    # `\e[2K` erases the whole line and `\r` moves the cursor to the beginning of the line
+
+## Use sshfs to rsync files to a host that provides SFTP access but not SSH access
+
+    v=/tmp/sshfs
+    mkdir -p $v
+    sshfs user@host:/basedir/ -o reconnect,local,allow_other,defer_permissions $v
+    rsync -rtv --progress ~/Sites/site $v
+    umount $v
+    rm -rf $v
+
+    # add a public key to `.ssh/authorized_keys` on the host
+    # replace `umount` with `fusermount -u` if you do not use OSXFUSE
+
+## View full size images on a Google Images search page opened in the frontmost tab in Safari
+
+    sjs(){ osascript -e'on run{a}' -e'tell app"safari"to do javascript a in document 1' -eend "$1"; }
+    ss(){ sjs document.body.innerHTML; }
+    z(){ cut -d"${1:0:1}" -f"${1:1}" "${@:2}"; }
+    uu(){ local l;while IFS= read -r l;do printf %b\\n "${l//%/\\x}";done; }
+    html(){ local f=/tmp/$(date +%s%3N).html;cat>$f;open $f; }
+    im(){ recode ..xml|sed 's,^/,file:///,;s,.*,<a href=&><img src=&></a>,'|tr -d \\n|cat <(echo "<style>body{text-align:center}img{height:${1-calc(50% - 20px)}}</style>") -|html; }
+
+    ss|pup '.rg_l attr{href}'|z =2-|z \&1|uu|im
+
+## View full size images posted to a Tumblr blog
+
+    html(){ local f=/tmp/$(date +%s%3N).html;cat>$f;open $f; }
+    im(){ sed 's,^/,file:///,;s,.*,<a href=&><img src=&></a>,'|tr -d \\n|cat <(echo "<style>body{text-align:center}img{height:${1-calc(50% - 20px)}}</style>") -|html; }
+
+    api="http://api.tumblr.com/v2/blog/example.tumblr.com/posts?type=photo&api_key=$tumblrapi"
+    seq 0 20 $(curl -s "$api"|jq .response.total_posts|awk '$0>1000{$0=1000}1')|parallel -j10 -qk curl -s "$api&offset="{}|jq -r '.response.posts[]?.photos[]?.original_size.url'|im
+
+    # in `parallel` `-q` quotes the command and `-k` keeps the blocks of output in the same order as the input arguments

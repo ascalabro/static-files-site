@@ -1,0 +1,153 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name=viewport content=width=device-width,initial-scale=1>
+<style>
+* {
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+body {
+  font: 16px Georgia, serif;
+}
+pre, code {
+  font: 14px Menlo, 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+  white-space: pre-wrap;
+  background: #e5e5e5;
+}
+blockquote {
+  background: #e5e5e5;
+  margin-left: 0;
+  margin-right: 0;
+  border-left: 4px solid #aaa;
+  padding: 1em 0 1em 1em;
+}
+li p:first-child, blockquote p:first-child {
+  margin-top: 0;
+}
+li p:last-child, blockquote p:last-child {
+  margin-bottom: 0;
+}
+</style>
+<title>Emacs</title>
+<h1>Emacs</h1>
+<p>I have also made text files for notes that I took when I started to use Emacs (<a href="http://2048.fi/emacsbasic.txt">http://2048.fi/emacsbasic.txt</a>) and parts of my Emacs configuration files (<a href="http://2048.fi/emacsconfig.txt">http://2048.fi/emacsconfig.txt</a>).</p>
+<h2>Using a copy of iTerm 2 as Emacs.app</h2>
+<p>I now use the GNU Emacs.app, but when I started using Emacs, I made my own Emacs.app by making a copy of iTerm 2:</p>
+<pre><code>cp -R /Applications/iTerm.app /Applications/Emacs.app
+defaults write /Applications/Emacs.app/Contents/Info.plist CFBundleIdentifier my.emacs</code></pre>
+<p>Changing the bundle identifier makes the application use a different preferences file than iTerm 2 and allows it to be open at the same time as iTerm 2.</p>
+<p>I changed the command that is ran in new shells to <code>/usr/local/bin/emacs</code> from the preferences.</p>
+<p>I used Platypus to create an application that runs <code>emacsclient -n &quot;$@&quot;;open -b my.emacs</code> and made it the default application for text and code files. I added</p>
+<pre><code>(require &#39;server)
+(or (server-running-p) (server-start))</code></pre>
+<p>to <code>~/.emacs</code>.</p>
+<p>The two main reasons why I started using the GNU Emacs.app instead of the copy of iTerm 2 are that in a text terminal many key combinations cannot be used in keybindings, such as key combinations that include a super or hyper key, and that I did not figure out how to share the kill ring with the OS X clipboard like Emacs.app does by default.</p>
+<h2>Copy and paste for text terminals</h2>
+<pre><code>(defun pbcopy ()
+  (interactive)
+  (let ((deactivate-mark t))
+    (call-process-region (point) (mark) &quot;pbcopy&quot;)))
+
+(defun pbpaste ()
+  (interactive)
+  (call-process-region (point) (if mark-active (mark) (point)) &quot;pbpaste&quot; t t))
+
+(defun pbcut ()
+  (interactive)
+  (pbcopy)
+  (delete-region (region-beginning) (region-end)))
+
+(global-set-key (kbd &quot;C-c c&quot;) &#39;pbcopy)
+(global-set-key (kbd &quot;C-c v&quot;) &#39;pbpaste)
+(global-set-key (kbd &quot;C-c x&quot;) &#39;pbcut)</code></pre>
+<h2>Using Karabiner to add a hyper key and to add an OS X-wide shortcut for ido-find-file</h2>
+<p>I use the right control key as a hyper key:</p>
+<pre><code>(setq ns-right-control-modifier &#39;hyper)</code></pre>
+<p>I have used Karabiner to map the home key, which is under a thumb on my keyboard, to the right control key in Emacs, and to the combination of control, option, shift, and command in other applications:</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;root&gt;
+  &lt;appdef&gt;
+    &lt;appname&gt;EMACS&lt;/appname&gt;
+    &lt;equal&gt;org.gnu.Emacs&lt;/equal&gt;
+  &lt;/appdef&gt;
+  &lt;vkopenurldef&gt;
+    &lt;name&gt;KeyCode::VK_OPEN_URL_EMACS&lt;/name&gt;
+    &lt;url&gt;file:///usr/local/opt/emacs/Emacs.app&lt;/url&gt;
+  &lt;/vkopenurldef&gt;
+  &lt;item&gt;
+    &lt;identifier&gt;emacs&lt;/identifier&gt;
+    &lt;name&gt;emacs&lt;/name&gt;
+    &lt;only&gt;EMACS&lt;/only&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::HOME, KeyCode::CONTROL_R&lt;/autogen&gt;
+  &lt;/item&gt;
+  &lt;item&gt;
+    &lt;identifier&gt;notemacs&lt;/identifier&gt;
+    &lt;name&gt;notemacs&lt;/name&gt;
+    &lt;not&gt;EMACS&lt;/not&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::HOME, ModifierFlag::NONE, KeyCode::CONTROL_L, ModifierFlag::CONTROL_L | ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::COMMAND_L&lt;/autogen&gt;
+    &lt;autogen&gt;__KeyToKey__ KeyCode::F, VK_CONTROL | VK_OPTION | VK_SHIFT | VK_COMMAND, KeyCode::VK_OPEN_URL_EMACS, KeyCode::VK_WAIT_100MS, KeyCode::F, ModifierFlag::CONTROL_R&lt;/autogen&gt;
+  &lt;/item&gt;
+&lt;/root&gt;</code></pre>
+<p><code>H-f</code> opens a file using the home directory as the default location:</p>
+<pre><code>(global-set-key (kbd &quot;H-f&quot;) (lambda () (interactive) (ido-find-file-in-dir &quot;~/&quot;)))</code></pre>
+<p>The last <code>autogen</code> line above makes pressing the f key while holding my custom hyper key also switch to Emacs when another application is frontmost.</p>
+<h2>Full screen</h2>
+<p>Use a custom implementation for full screen windows so that there is no animation for switching between Emacs and other applications:</p>
+<pre><code>(setq-default ns-use-native-fullscreen nil)</code></pre>
+<p>Enter full screen when Emacs is opened:</p>
+<pre><code>(setq initial-frame-alist &#39;((fullscreen . fullboth)))</code></pre>
+<h2>Auto-save</h2>
+<p>Save buffers when switching from Emacs to another application:</p>
+<pre><code>(add-hook &#39;focus-out-hook (lambda () (let ((inhibit-message t)) (save-some-buffers t))))</code></pre>
+<p><code>focus-out-hook</code> was added in Emacs 24.4 and <code>inhibit-message</code> was added in Emacs 25. Setting <code>inhibit-message</code> to <code>t</code> disables the message about what files are saved, which would otherwise even be shown over the minibuffer when the minibuffer is active.</p>
+<p>Save buffers when switching to another buffer or window:</p>
+<pre><code>(defadvice switch-to-buffer (before save-buffer-now activate)
+  (when buffer-file-name (let ((inhibit-message t)) (save-some-buffers t))))
+
+(defadvice other-window (before other-window-now activate)
+  (when buffer-file-name (let ((inhibit-message t)) (save-some-buffers t))))</code></pre>
+<p>Revert a buffer associated with a file without asking when the file changes on disk:</p>
+<pre><code>(global-auto-revert-mode 1)</code></pre>
+<p>Make <code>s-w</code> save and kill a buffer:</p>
+<pre><code>(defun save-and-kill-this-buffer ()
+  (interactive)
+  (if (and (buffer-modified-p) (not buffer-read-only) (buffer-file-name)) (save-buffer))
+  (kill-this-buffer))
+
+(global-set-key (kbd &quot;s-w&quot;) &#39;save-and-kill-this-buffer)</code></pre>
+<h2>Setting a default PATH for Emacs and other applications</h2>
+<p>Save a property list like this as <code>~/Library/LaunchAgents/my.startup.plist</code>:</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+&lt;dict&gt;
+  &lt;key&gt;Label&lt;/key&gt;
+  &lt;string&gt;my.startup&lt;/string&gt;
+  &lt;key&gt;ProgramArguments&lt;/key&gt;
+  &lt;array&gt;
+    &lt;string&gt;sh&lt;/string&gt;
+    &lt;string&gt;-c&lt;/string&gt;
+    &lt;string&gt;launchctl setenv PATH /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin&lt;/string&gt;
+  &lt;/array&gt;
+  &lt;key&gt;RunAtLoad&lt;/key&gt;
+  &lt;true/&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</code></pre>
+<p>The property list gets loaded the next time you log in, so you do not have to load it manually.</p>
+<p>The lines</p>
+<pre><code>&lt;string&gt;sh&lt;/string&gt;
+&lt;string&gt;-c&lt;/string&gt;
+&lt;string&gt;launchctl setenv PATH /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin&lt;/string&gt;</code></pre>
+<p>can be replaced with</p>
+<pre><code>&lt;string&gt;launchctl&lt;/string&gt;
+&lt;string&gt;setenv&lt;/string&gt;
+&lt;string&gt;PATH&lt;/string&gt;
+&lt;string&gt;/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin&lt;/string&gt;</code></pre>
+<p>but this method allows you to add other commands to the file later.</p>
+<p>This does not change the path in applications that are opened as login items or that are reopened at login after a forced shutdown. If you have Emacs, a terminal application, or other applications where you want to change the path in login items, you will have to remove them. After a forced shutdown, you either have to choose the option to not restore open applications, or you have to quit and reopen applications that get restored in order to change the path in them.</p>
+<h2>Unsorted</h2>
+<p><code>brew install emacs --cocoa</code> installs Emacs including the GNU Emacs.app. <code>brew update;brew upgrade emacs</code> updates Homebrew and upgrades Emacs.</p>
+<p><code>(setq ns-antialias-text nil)</code> disables anti-aliasing.</p>
+<p><code>(set-fontset-font &quot;fontset-default&quot; 'japanese-jisx0208 '(&quot;Hiragino Kaku Gothic ProN&quot; . &quot;iso10646-1&quot;))</code> uses a Japanese instead of a Chinese font for displaying Japanese and Chinese characters.</p>
+<p><code>(setq shell-file-name &quot;/usr/local/bin/bash&quot;)</code> makes <code>shell-command</code> and <code>shell-command-on-region</code> use a version of Bash installed with Homebrew, and <code>(setq shell-command-switch &quot;-lc&quot;)</code> makes them invoke Bash as a login shell that reads <code>~/.bash_profile</code>.</p>
+<p><code>(setq ring-bell-function 'ignore)</code> disables the audible bell. When the alert volume is set to zero from System Preferences, the audible bell is not played, but it causes the sound output to be activated in a way that a quiet hiss is produced for some period of time.</p>

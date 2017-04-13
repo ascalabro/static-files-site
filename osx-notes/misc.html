@@ -1,0 +1,703 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name=viewport content=width=device-width,initial-scale=1>
+<style>
+* {
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+body {
+  font: 16px Georgia, serif;
+}
+pre, code {
+  font: 14px Menlo, 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+  white-space: pre-wrap;
+  background: #e5e5e5;
+}
+blockquote {
+  background: #e5e5e5;
+  margin-left: 0;
+  margin-right: 0;
+  border-left: 4px solid #aaa;
+  padding: 1em 0 1em 1em;
+}
+li p:first-child, blockquote p:first-child {
+  margin-top: 0;
+}
+li p:last-child, blockquote p:last-child {
+  margin-bottom: 0;
+}
+</style>
+<title>Miscellaneous</title>
+<h1>Miscellaneous</h1>
+<h2>Using a shell to generate HTML files for viewing or selecting images</h2>
+<p>The commands below use these functions:</p>
+<pre><code>html(){ local f=/tmp/$(gdate +%s%3N).html;cat&gt;$f;open $f; }
+im(){ recode ..xml|sed s,^/,file:///,|sed &#39;s,.*,&lt;a href=&amp;&gt;&lt;img src=&amp;&gt;&lt;/a&gt;,&#39;|tr -d \\n|cat &lt;(echo &quot;&lt;style&gt;body{text-align:center}img{height:${1-calc(50% - 20px)}}&lt;/style&gt;&quot;) -|html; }
+st(){ osascript -e&#39;set text item delimiters to linefeed&#39; -e&#39;tell app&quot;safari&quot;to url of tabs of window 1 as text&#39;|sed s,^file://,,; }
+scm(){ osascript -e&#39;on run{a}&#39; -e&#39;tell app&quot;safari&quot;to close tabs of window 1 whose url contains a&#39; -eend &quot;$1&quot;; }
+mt(){ gxargs -rd\\n gmv -t&quot;$1&quot;; }
+p(){ printf %s\\n &quot;$@&quot;; }</code></pre>
+<p>The two <code>osascript</code> commands above also work with Chrome if you just change the application name.</p>
+<p>View images so that two rows of images are displayed per screen:</p>
+<pre><code>p ~/dir/*.jpg|im</code></pre>
+<p>View images so that a single row of images is displayed per screen:</p>
+<pre><code>p ~/dir/*.jpg|im &#39;calc(100% - 40px)&#39;</code></pre>
+<p>The page down key scrolls 100% - 40px down in Safari and Chrome and 100% - 32px down in Firefox. In the versions of Safari, Chrome, and Firefox I tested with, <code>calc(50%-20px)</code> (without spaces around the minus sign) does not work but <code>calc(50% - 20px)</code> does.</p>
+<p>Move images opened in tabs to the desktop:</p>
+<pre><code>st|mt ~/Desktop</code></pre>
+<p>Move images opened in tabs to the desktop and close the tabs for images assuming that the URLs of the tabs for the images contain <code>.jpg</code> but the URLs of other tabs do not:</p>
+<pre><code>st|grep \\.jpg|mt ~/Desktop;scm .jpg</code></pre>
+<p>Create a file for the filenames of images that you have checked and view the first thousand images that you have not yet checked:</p>
+<pre><code>touch checked;printf %s\\n ~/dir/*.jpg|awk -F/ &#39;FILENAME==ARGV[1]{a[$0];next}!($NF in a)&#39; checked -|head -1000|tee &gt;(sed &#39;s,.*/,,&#39;&gt;&gt;checked)|im</code></pre>
+<p>To escape spaces or other characters in local paths, add <code>jq -Rr @uri|sed s,%2F,/,g</code> before the <code>im</code> function.</p>
+<p>You can run <code>defaults write -g NSScrollAnimationEnabled -bool false</code> to disable the animation for scrolling a page down.</p>
+<p>To sort the images in a directory in the order that they were added to the directory, you can use this function:</p>
+<pre><code>sbda(){ if (($#&gt;0));then printf %s\\n &quot;$@&quot;;else cat;fi|gxargs -rd\\n mdls -rnkMDItem{DateAdded,Path}|tr \\0 \\n|paste - -|sort -r|cut -f2; }</code></pre>
+<p>To select images using only the mouse, you can use a <code>private.xml</code> like this with Karabiner to map a mouse button to the page down key:</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;root&gt;
+  &lt;item&gt;
+    &lt;name&gt;custom&lt;/name&gt;
+    &lt;identifier&gt;custom&lt;/identifier&gt;
+    &lt;autogen&gt;__KeyToKey__ PointingButton::BUTTON4, KeyCode::PAGEDOWN&lt;/autogen&gt;
+  &lt;/item&gt;
+&lt;/root&gt;</code></pre>
+<h2>Installing GNU command line utilities with Homebrew</h2>
+<p>This command installs coreutils and other GNU utilities:</p>
+<pre><code>brew install coreutils findutils gawk gnu-sed gnu-tar wget homebrew/dupes/grep</code></pre>
+<p>To use the utilities from coreutils without a <code>g</code> prefix, add <code>/usr/local/opt/coreutils/libexec/gnubin</code> to the path before the default directories. You can create symlinks for the utilities that are not in coreutils:</p>
+<pre><code>ln -s /usr/local/opt/findutils/bin/gfind /usr/local/bin/find
+ln -s /usr/local/opt/findutils/bin/gxargs /usr/local/bin/xargs
+ln -s /usr/local/opt/gawk/bin/gawk /usr/local/bin/awk
+ln -s /usr/local/opt/gnu-sed/bin/gsed /usr/local/bin/sed
+ln -s /usr/local/opt/grep/bin/ggrep /usr/local/bin/grep
+ln -s /usr/local/opt/grep/bin/gegrep /usr/local/bin/egrep
+ln -s /usr/local/opt/grep/bin/gfgrep /usr/local/bin/fgrep</code></pre>
+<h2>Setting default applications for executable scripts and text files without an extension</h2>
+<p>One option is to use <code>duti</code>:</p>
+<pre><code>brew install duti
+echo $&#39;org.gnu.Emacs public.unix-executable all\norg.gnu.Emacs public.plain-text all&#39;&gt;~/.duti
+duti ~/.duti</code></pre>
+<p>Another option is to modify <code>~/Library/Preferences/com.apple.LaunchServices.plist</code> directly like below, but then you have to restart to apply the changes. Logging out and back in is not enough.</p>
+<pre><code>defaults write com.apple.LaunchServices LSHandlers -array-add &#39;{LSHandlerContentType=public.unix-executable;LSHandlerRoleAll=org.gnu.Emacs;}&#39;
+defaults write com.apple.LaunchServices LSHandlers -array-add &#39;{LSHandlerContentType=public.plain-text;LSHandlerRoleAll=org.gnu.Emacs;}&#39;</code></pre>
+<h2>Shell scripts for iTunes</h2>
+<p>Add a playlist:</p>
+<pre><code>osascript -e&#39;on run {a}
+    set l to {}
+    repeat with f in (get paragraphs of a)
+        set end of l to POSIX file f
+    end repeat
+    tell application &quot;iTunes&quot;
+        if number of l is 1 then
+            tell application &quot;Finder&quot; to set n to name of (item 1 of l as alias)
+            delete playlists whose name is n
+            set p to make new user playlist with properties {name:n}
+        else
+            set p to make new user playlist
+        end if
+        try -- the add command sometimes times out
+            add l to p
+            set view of browser window 1 to p
+        end try
+    end tell
+end run&#39; &quot;$(printf %s\\n &quot;${@-$(cat)}&quot;|gxargs -rd\\n greadlink -f)&quot;</code></pre>
+<p><code>printf %s\\n &quot;${@-$(cat)}&quot;</code> gets input as arguments if there are arguments but from STDIN otherwise.</p>
+<p>Get the folders or files selected in Finder as input, convert FLAC files to MP3, split files with cue files, and delete playlist files:</p>
+<pre><code>fs(){ osascript -e&#39;set l to{}&#39; -e&#39;tell app&quot;finder&quot;to repeat with f in(get selection)&#39; -e&#39;set end of l to posix path of(f as alias)&#39; -eend -e&#39;set text item delimiters to linefeed&#39; -e&#39;l as text&#39;; }
+alias p=&#39;printf %s\\n&#39; ,=parallel e=&#39;gxargs -rd\\n&#39;
+
+x=$(fs)
+
+p &quot;$x&quot;|, -X find {} -iname \*.flac|, ffmpeg -i {} -aq 2 {.}.mp3
+p &quot;$x&quot;|, -X find {} -iname \*.cue|, mp3splt -c {} {.}.mp3
+p &quot;$x&quot;|, -X find {}|egrep &#39;\.(pls|m3u|m3u8)$&#39;|e rm</code></pre>
+<p>The <code>-X</code> option in <code>parallel</code> fills a command line with multiple arguments like <code>xargs</code>. <code>mp3splt -c file.{cue,mp3}</code> splits an MP3 file with a cue file.</p>
+<h2>Enabling Apache and setting up virtual hosts</h2>
+<p>Run <code>sudo -v</code> to validate the <code>sudo</code> timestamp and then run the commands below.</p>
+<pre><code>echo &#39;&lt;Directory &quot;/Users/&#39;$USER&#39;/Sites/&quot;&gt;
+  Options Indexes Multiviews
+  AllowOverride AuthConfig Limit
+  Order allow,deny
+  Allow from all
+&lt;/Directory&gt;&#39;|sudo tee -a /etc/apache2/users/$USER.conf
+echo 127.0.0.1 test.dev|sudo tee -a /etc/hosts
+sudo sed -i &#39;&#39; &#39;s,#\(Include /private/etc/apache2/extra/httpd-vhosts.conf\),\1,&#39; /etc/apache2/httpd.conf
+echo &#39;&lt;VirtualHost *:80&gt;
+  DocumentRoot &quot;/Users/&#39;$USER&#39;/Sites/test&quot;
+  ServerName test.dev
+&lt;/VirtualHost&gt;
+&lt;VirtualHost *:80&gt;
+  DocumentRoot &quot;/Users/&#39;$USER&#39;/Sites&quot;
+  ServerName localhost
+&lt;/VirtualHost&gt;&#39;|sudo tee -a /etc/apache2/extra/httpd-vhosts.conf
+sudo apachectl restart
+mkdir -p ~/Sites/test
+echo a&gt;~/Sites/test/index.html
+sleep 1
+open http://localhost/~$USER/test/index.html http://test.dev/index.html</code></pre>
+<p><code>/usr/sbin/apachectl</code> is a shell script in OS X, and <code>sudo apachectl start</code> runs <code>launchctl load -w /System/Library/LaunchDaemons/org.apache.httpd.plist</code> as the superuser, which enables Apache permanently by modifying <code>/var/db/launchd.db/com.apple.launchd/overrides.plist</code>.</p>
+<p><code>http://localhost/~$USER/</code> does not work if you do not add the <code>Directory</code> directive to <code>/etc/apache2/users/$USER.conf</code>.</p>
+<h2>Using a shell to manage text files for URLs to read</h2>
+<p>The commands below use these functions:</p>
+<pre><code>st(){ osascript -e&#39;set text item delimiters to linefeed&#39; -e&#39;tell app&quot;safari&quot;to url of tabs of window 1 as text&#39;; }
+s1(){ osascript -e&#39;tell app&quot;safari&quot;to url of document 1&#39;; }
+dl(){ local f;for f in &quot;${@:2}&quot;;do ghead -n-$1 &quot;$f&quot;|sponge &quot;$f&quot;;done; }
+ua(){ touch &quot;$1&quot;;awk &#39;!a[$0]++&#39; &quot;$1&quot; -|sponge &quot;$1&quot;; }
+/(){ awk &#39;FILENAME==ARGV[1]{a[$0];next}!($0 in a)&#39; - &quot;$1&quot;|sponge &quot;$1&quot;; }</code></pre>
+<p>The first two functions also work with Chrome if you replace <code>safari</code> with <code>google chrome</code> and <code>document 1</code> with <code>active tab of window 1</code>.</p>
+<p><code>sponge</code> is part of moreutils.</p>
+<p>Add the URLs of all tabs in the frontmost window in Safari to a text file and remove duplicates:</p>
+<pre><code>st|ua toread</code></pre>
+<p>Add the URL of the current tab in Safari to a text file:</p>
+<pre><code>s1 &gt;&gt;toread</code></pre>
+<p>Open and delete the last ten lines in a text file:</p>
+<pre><code>tail toread|xargs open;dl 10 toread</code></pre>
+<p>Delete the URLs of tabs in the frontmost Safari window from a text file:</p>
+<pre><code>st|/ toread</code></pre>
+<h2>Scripts for previewing and selecting tracks in iTunes</h2>
+<p>Start playing the next track from the middle:</p>
+<pre><code>tell application &quot;iTunes&quot;
+    next track
+    set player position to 0.5 * (duration of current track)
+    reveal current track
+end tell</code></pre>
+<p>Set the rating of the current track to one star and start playing the next track from the middle:</p>
+<pre><code>tell application &quot;iTunes&quot;
+    set rating of current track to 20
+    next track
+    set player position to 0.5 * (duration of current track)
+    reveal current track
+end tell</code></pre>
+<p>Move 30 seconds backward:</p>
+<pre><code>tell application &quot;iTunes&quot;
+    if player position &lt; 30 then
+        previous track
+    else
+        set player position to player position - 30
+    end if
+end tell</code></pre>
+<p>Move 30 seconds forward:</p>
+<pre><code>tell application &quot;iTunes&quot;
+    set player position to player position + 30
+end tell</code></pre>
+<p>Move the file of the current track to the trash and start playing the next track:</p>
+<pre><code>tell application &quot;iTunes&quot;
+    set t to current track
+    set l to location of t
+    next track
+    play
+    reveal current track
+    delete t
+    tell application &quot;Finder&quot; to move l to trash
+end tell</code></pre>
+<h2>sh</h2>
+<p><code>sh</code> can refer to:</p>
+<ul>
+<li>The abstract shell specified by POSIX. It is implemented by some shells like <code>bash</code> and <code>zsh</code> when they are invoked as <code>sh</code> and by other shells like <code>dash</code> by default.</li>
+<li><code>/bin/sh</code>, which is some shell that conforms to POSIX on most modern Unix-like platforms, even though it was the Bourne shell in Solaris until Solaris 11, which was released in 2011.</li>
+<li>Historical shells such as the Bourne shell or Thompson shell. Early versions of <code>ksh</code> were also called <code>sh</code>.</li>
+</ul>
+<p>As of 2015, <code>/bin/sh</code> is <code>bash</code> in OS X, Arch, Gentoo, Red Hat, and SUSE, <code>dash</code> in Debian, <code>ash</code> in FreeBSD, <code>pdksh</code> in OpenBSD, and <code>ksh93</code> in Solaris. It was <code>zsh</code> in OS X in 10.0 and 10.1.</p>
+<p>The <code>bash</code> manual includes <a href="http://www.gnu.org/software/bash/manual/bashref.html#Major-Differences-From-The-Bourne-Shell">a list of differences between bash and the Bourne shell</a> and <a href="http://www.gnu.org/software/bash/manual/bashref.html#bash-POSIX-Mode">a list of changes that are caused by POSIX mode being enabled</a>.</p>
+<p>When <code>bash</code> is invoked as <code>sh</code>:</p>
+<ul>
+<li>POSIX mode is enabled.</li>
+<li>Interactive login shells do not read <code>~/.bash_profile</code> or <code>~/.bash_login</code> and interactive non-login shells do not read <code>~/.bashrc</code>.</li>
+<li><code>echo</code> does not support options and interprets escape sequences by default.</li>
+<li>When the <code>EDITOR</code> variable is set, its value is also used as the default value for <code>FCEDIT</code>.</li>
+</ul>
+<p>The last three are not implied by enabling POSIX mode alone. Invoking <code>bash</code> as <code>sh</code> is meant to make <code>bash</code> fully conform to POSIX, but only invoking <code>bash</code> in POSIX mode intentionally does not conform to POSIX in the last two aspects.</p>
+<p>The <code>bash</code> manual says that &quot;If Bash is invoked with the name <code>sh</code>, it tries to mimic the startup behavior of historical versions of <code>sh</code> as closely as possible, while conforming to the POSIX standard as well.&quot; The mimicking of historical versions of <code>sh</code> is limited to the startup behavior though, and almost all of the changes when <code>bash</code> is invoked as <code>sh</code> are caused by POSIX mode being enabled. POSIX does not specify what startup files shells should read apart from requiring them to interpret the value of <code>ENV</code> as a startup file on XSI-conformant systems. (XSI-conformant systems include OS X, because OS X conforms to SUS which requires the XSI options to be supported.)</p>
+<p>When <code>bash</code> is invoked as <code>sh</code>, the builtin <code>echo</code> interprets escape sequences and does not support options unless <code>xpg_echo</code> is unset:</p>
+<pre><code>$ sh
+sh-3.2$ echo -n &#39;1\n2&#39;
+-n 1
+2
+sh-3.2$ shopt -u xpg_echo;echo -n &#39;1\n2&#39;
+1\n2sh-3.2$</code></pre>
+<p>You should normally just use <code>printf</code> instead of unsetting <code>xpg_echo</code> though. <code>shopt</code> and <code>xpg_echo</code> are specific to <code>bash</code>. POSIX requires implementations of <code>echo</code> to not support any options, but it allows <code>echo</code> to either interpret escape sequences by default or not, and to either print or not print <code>-n</code> if the first argument is <code>-n</code>.</p>
+<p>The <code>/bin/sh</code> file is not a symlink or a hard link in OS X, but it is almost identical with the <code>/bin/bash</code> file. If you compare the output of <code>strings /bin/bash</code> and <code>strings /bin/sh</code>, there are only three differences, one of which is the different default value for <code>FCEDIT</code>:</p>
+<pre><code>$ diff &lt;(strings /bin/bash) &lt;(strings /bin/sh)
+19a20
+&gt; /bin/bash
+1289c1290
+&lt; ${FCEDIT:-${EDITOR:-ed}}
+---
+&gt; ${FCEDIT:-ed}
+2151c2152
+&lt; @(#)PROGRAM:bash  PROJECT:bash-94.1.2
+---
+&gt; @(#)PROGRAM:sh  PROJECT:bash-94.1.2</code></pre>
+<p>If you use <code>#!/bin/sh</code> as the interpreter line in a script (or <code>#!/usr/bin/env sh</code>, because POSIX does not require the <code>sh</code> executable to be in <code>/bin</code>), you should avoid features of shells that are not specified by POSIX. For example <code>/bin/sh</code> is <code>dash</code> in Debian, so many features that are supported by <code>bash</code> but not by <code>dash</code> work with the <code>/bin/sh</code> in OS X but not with the <code>/bin/sh</code> in Debian.</p>
+<h2>Collation order in UTF-8 locales</h2>
+<p>As far as I can tell, OS X uses code point collation order in UTF-8 locales, even though GNU/Linux and other platforms that use GNU libc do not.</p>
+<p>This prints <code>ABabÄä</code> in OS X and <code>aAäÄbB</code> in Ubuntu:</p>
+<pre><code>printf %s\\n A B a b Ä ä|LC_ALL=en_US.UTF-8 sort|tr -d \\n</code></pre>
+<p>This prints 26 in OS X and 310 in Ubuntu:</p>
+<pre><code>export LC_ALL=en_US.UTF-8;printf %b $(printf \\\\U%08x\\\\n $(seq $((0x11)) $((0x10ffff))))|grep -a &#39;[a-z]&#39;|wc -l</code></pre>
+<p>The code below prints nothing in OS X, which indicates that the input is sorted. The six surrogate characters that are skipped would cause an illegal byte sequence error.</p>
+<pre><code>export LC_ALL=en_US.UTF-8
+for((i=1;i&lt;=0x1fffff;i++));do
+  x=$(printf %04x $i)
+  [[ $x = @(000a|d800|db7f|db80|dbff|dc00|dfff) ]]&amp;&amp;continue
+  printf %b \\U$x\\n
+done|sort -c</code></pre>
+<p>The code below prints nothing in OS X, which indicates that if the few code points that are skipped are not considered, there are no two consecutive code points that have the same collation order.</p>
+<pre><code>export LC_ALL=en_US.UTF-8
+for((i=1;i&lt;=0x1ffffe;i++));do
+  [[ $(printf %04x $i) = @(000a|d800|db7f|db80|dbff|dc00|dfff) ]]&amp;&amp;continue
+  [[ $(printf %04x $((i+1))) = @(000a|d800|db7f|db80|dbff|dc00|dfff) ]]&amp;&amp;continue
+  printf %b $(printf &#39;\\U%08x\\n&#39; $((i+1)) $i)|sort -c 2&gt;/dev/null&amp;&amp;echo $i
+done</code></pre>
+<p>Some characters and sequences of characters have the same collation order in GNU/Linux but not in OS X. This prints ① first in OS X (using either OS X's <code>sort</code> or GNU <code>sort</code>) but ② first in Ubuntu:</p>
+<pre><code>export LC_ALL=en_US.UTF-8;printf %s\\n ② ①|sort</code></pre>
+<p>This prints three lines in OS X (using either OS X's <code>sort</code> or GNU <code>sort</code>) but one line in Ubuntu:</p>
+<pre><code>export LC_ALL=en_US.UTF-8;printf %b\\n \\u0d4c \\u0d57 \\u0d46\\u0d57|sort -u</code></pre>
+<h2>Setting a default PATH</h2>
+<p>Save a property list like this as <code>~/Library/LaunchAgents/my.startup.plist</code>:</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+&lt;dict&gt;
+  &lt;key&gt;Label&lt;/key&gt;
+  &lt;string&gt;my.startup&lt;/string&gt;
+  &lt;key&gt;ProgramArguments&lt;/key&gt;
+  &lt;array&gt;
+    &lt;string&gt;sh&lt;/string&gt;
+    &lt;string&gt;-c&lt;/string&gt;
+    &lt;string&gt;launchctl setenv PATH /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin&lt;/string&gt;
+  &lt;/array&gt;
+  &lt;key&gt;RunAtLoad&lt;/key&gt;
+  &lt;true/&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</code></pre>
+<p>The property list gets loaded the next time you log in, so you do not have to load it manually.</p>
+<p>This method does not change the path in applications that are opened as login items or when applications are reopened at login after a forced shutdown. If you have a terminal application, text editors, or other applications where you want to change the path in login items, you'll have to remove them, and after a forced shutdown you'll either have to choose the option to not restore open applications or to quit and reopen applications where you want to change the path after they get restored.</p>
+<p>In 10.9 and earlier another option is to add <code>setenv PATH /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</code> to <code>/etc/launchd.conf</code> and to restart to apply the changes, but <code>/etc/launchd.conf</code> is ignored in 10.10 and later.</p>
+<p>The lines in <code>/etc/paths</code> and <code>/etc/paths.d/*</code> are added to the path by <code>/usr/libexec/path_helper</code>, which is ran from <code>/etc/profile</code>, <code>/etc/zsh.env</code>, and <code>/etc/csh.login</code>. <code>zsh</code> reads <code>/etc/zsh.env</code> even in non-login shells but <code>bash</code> does not read <code>/etc/profile</code> in non-login shells. <code>path_helper</code> is also not ran by graphical applications like Xcode, Emacs.app, or Script Editor.</p>
+<h2>Finding programs with the highest CPU use over a long period of time</h2>
+<p>First run <code>crontab -e</code> and add a line like this:</p>
+<pre><code>*/5 * * * * ps -eco\%cpu=,command=&gt;&gt;~/.ps</code></pre>
+<p><code>-c</code> changes <code>-o command</code> from the full command line to the command name in OS X's <code>ps</code> like in the procps <code>ps</code> by default. Percent signs have to be escaped in crontab because an unescaped percent sign is treated as a linefeed.</p>
+<p>Then later run this command:</p>
+<pre><code>awk &#39;{x=$1;$1=&quot;&quot;;a[$0]+=x}END{for(i in a)print a[i],i}&#39; ~/.ps|sort -rn</code></pre>
+<h2>Applications</h2>
+<ul>
+<li><a href="http://www.alfredapp.com">Alfred</a></li>
+<li><a href="http://www.haystacksoftware.com/arq/">Arq</a></li>
+<li><a href="http://www.gnu.org/software/emacs/manual/html_mono/emacs.html">Emacs</a></li>
+<li><a href="http://www.red-sweater.com/fastscripts/">FastScripts</a></li>
+<li><a href="http://www.fernlightning.com/doku.php?id=software:fseventer:start">fseventer</a></li>
+<li><a href="http://iterm2.com">iTerm 2</a></li>
+<li><a href="https://pqrs.org/osx/karabiner/xml.html.en">Karabiner</a></li>
+<li><a href="https://itunes.apple.com/us/app/movist/id461788075">Movist</a></li>
+<li><a href="http://notational.net/">Notational Velocity</a></li>
+<li><a href="http://www.telestream.net/screenflow/overview.htm">Screenflow</a></li>
+<li><a href="http://sequentialx.com/">Sequential</a></li>
+<li><a href="https://www.torproject.org/projects/torbrowser.html.en">TorBrowser</a></li>
+</ul>
+<h2>Using a shell script to configure keyboard shortcuts</h2>
+<p>As an alternative to configuring keyboard shortcuts from System Preferences, you can modify the <code>NSUserKeyEquivalents</code> dictionaries in <code>~/Library/Preferences/.GlobalPreferences.plist</code> and in the property lists of applications like the script below.</p>
+<pre><code>defaults write -g NSUserKeyEquivalents &#39;{
+&quot;Show Previous Tab&quot;=&quot;@j&quot;;
+&quot;Show Next Tab&quot;=&quot;@k&quot;;
+&quot;Minimize&quot;=&quot;\u200b&quot;;
+&quot;Minimize All&quot;=&quot;\u200b&quot;;
+}&#39;
+
+defaults write com.apple.finder NSUserKeyEquivalents &#39;{
+&quot;Show Package Contents&quot;=&quot;@\r&quot;;
+}&#39;
+
+defaults write -app safari NSUserKeyEquivalents &#39;{
+&quot;Mail Contents of This Page&quot;=&quot;\u200b&quot;;
+}&#39;
+
+defaults write -app mail NSUserKeyEquivalents &#39;{
+&quot;\033Format\033Indentation\033Decrease&quot;=&quot;^\Uf702&quot;;
+&quot;\033Format\033Indentation\033Increase&quot;=&quot;^\Uf703&quot;;
+}&#39;
+
+defaults write -app skim NSUserKeyEquivalents &#39;{
+&quot;Single Page Continuous&quot;=&quot;$@0&quot;;
+&quot;Single Page&quot;=&quot;$@1&quot;;
+&quot;Two Pages&quot;=&quot;$@2&quot;;
+}&#39;</code></pre>
+<p>The shortcut strings use the same format as in <code>DefaultKeyBinding.dict</code>.</p>
+<p>You can disable a shortcut by setting the shortcut string to for example <code>\u200b</code> (<code>ZERO WIDTH SPACE</code>). Some examples use <code>nil</code>, but it is triggered by the <code>n</code> key in some applications like Audacity, and property lists do not have anything like null values. I used <code>\0</code> in place of <code>\u200b</code> before, but it started being triggered by any key in some version of Safari.</p>
+<p>If you specify the name of a menu item as <code>Format-&gt;Indentation-&gt;Increase</code> in System Preferences, it is stored as <code>\033Format\033Indentation\033Increase</code>.</p>
+<p>The <code>-app</code> option of <code>defaults</code> does not work with applications in <code>/System/Library/CoreServices</code> like Finder.</p>
+<h2>cp -r and cp -R</h2>
+<p>OS X's <code>cp</code> is based on an old version of FreeBSD <code>cp</code>. The man page for <code>cp</code> in OS X and old versions of FreeBSD says that <code>-r</code> does not copy special files, symbolic links, or FIFOs &quot;correctly&quot;:</p>
+<blockquote>
+<p>Historic versions of the <code>cp</code> utility had a <code>-r</code> option. This implementation supports that option; however, its use is strongly discouraged, as it does not correctly copy special files, symbolic links, or fifo's.</p>
+</blockquote>
+<p>In new versions of FreeBSD, <code>-r</code> is synonymous to <code>-RL</code>. See <a href="http://www.freebsd.org/cgi/man.cgi?query=cp">http://www.freebsd.org/cgi/man.cgi?query=cp</a>:</p>
+<blockquote>
+<p>Historic versions of the <code>cp</code> utility had a <code>-r</code> option. This implementation supports that option, however, its behavior is different from historical FreeBSD behavior. Use of this option is strongly discouraged as the behavior is implementation-dependent. In FreeBSD, <code>-r</code> is a synonym for <code>-RL</code> and works the same unless modified by other flags. Historical implementations of <code>-r</code> differ as they copy special files as normal files while recreating a hierarchy.</p>
+</blockquote>
+<p>In GNU <code>cp</code>, the <code>-r</code> and <code>-R</code> options are identical, but adding the <code>--copy-contents</code> and <code>-L</code> options makes them behave like the <code>-r</code> option in OS X. The description of the <code>--copy-contents</code> option in the coreutils manual also describes the behavior of <code>-r</code> in OS X:</p>
+<blockquote>
+<p><code>--copy-contents</code></p>
+<p>If copying recursively, copy the contents of any special files (e.g., FIFOs and device files) as if they were regular files. This means trying to read the data in each source file and writing it to the destination. It is usually a mistake to use this option, as it normally has undesirable effects on special files like FIFOs and the ones typically found in the <code>/dev</code> directory. In most cases, <code>cp -R --copy-contents</code> will hang indefinitely trying to read from FIFOs and special files like <code>/dev/console</code>, and it will fill up your destination disk if you use it to copy <code>/dev/zero</code>. This option has no effect unless copying recursively, and it does not affect the copying of symbolic links.</p>
+</blockquote>
+<p>With OS X's <code>cp</code>, for example <code>mkdir a;touch b;ln -s $PWD/b a;cp -r a c</code> replaces the symlink with the target file, <code>mkdir a;mkfifo a/b;cp -r a c</code> gets blocked reading the contents of the FIFO, and <code>mkdir a;ln -s /dev/zero a;cp -r a b</code> starts filling <code>b/zero</code> with null bytes.</p>
+<p><code>-r</code> has been made obsolete by POSIX. POSIX requires <code>-R</code> to have the usual behavior but says that the treatment of special files is implementation-defined for <code>-r</code>, and the section for future directions says that the <code>-r</code> option may be removed.</p>
+<h2>Preserving non-ASCII characters with pbcopy and pbpaste</h2>
+<p><code>pbcopy</code> and <code>pbpaste</code> do not preserve non-ASCII characters in the <code>C</code> locale. See the <code>pbcopy</code> manual:</p>
+<blockquote>
+<p>For example, absent other locale settings, setting the environment variable <code>LANG=en_US.UTF-8</code> will cause <code>pbcopy</code> and <code>pbpaste</code> to use UTF-8 for input and output. If an encoding cannot be determined from the locale, the standard C encoding will be used.</p>
+</blockquote>
+<p>Terminal and iTerm 2 set <code>LANG</code> to a value like <code>en_US.UTF-8</code> by default, where the language and territory parts depend on what region is selected from System Preferences, but the locale variables are unset by default in other places like in Automator and Script Editor. <code>LC_CTYPE=UTF-8 pbcopy</code> and <code>LC_CTYPE=UTF-8 pbpaste</code> always use UTF-8 (if <code>LC_ALL</code> is not set):</p>
+<pre><code>$ unset LANG LC_ALL
+$ echo ä|pbcopy;osascript -e&#39;the clipboard&#39;
+√§
+$ echo ä|LC_CTYPE=UTF-8 pbcopy;osascript -e&#39;the clipboard&#39;
+ä
+$ echo ä|LC_CTYPE=UTF-8 pbcopy;pbpaste
+�
+$ echo ä|LC_CTYPE=UTF-8 pbcopy;LC_CTYPE=UTF-8 pbpaste
+ä</code></pre>
+<p><code>LC_CTYPE</code> can be set to just <code>UTF-8</code>, but <code>LANG</code> and <code>LC_ALL</code> also have to include the language and territory parts (like <code>en_US.UTF-8</code>).</p>
+<h2>Locales in shells</h2>
+<p>Terminal and iTerm 2 set <code>LANG</code> based on the region selected from System Preferences by default. If you for example change the region to German from System Preferences, <code>LANG</code> is set to <code>de_DE.UTF-8</code> by default in Terminal (or iTerm 2):</p>
+<pre><code>$ defaults read -g AppleLocale
+de_DE
+$ locale
+LANG=&quot;de_DE.UTF-8&quot;
+LC_COLLATE=&quot;de_DE.UTF-8&quot;
+LC_CTYPE=&quot;de_DE.UTF-8&quot;
+LC_MESSAGES=&quot;de_DE.UTF-8&quot;
+LC_MONETARY=&quot;de_DE.UTF-8&quot;
+LC_NUMERIC=&quot;de_DE.UTF-8&quot;
+LC_TIME=&quot;de_DE.UTF-8&quot;
+LC_ALL=</code></pre>
+<p>The locale variables are unset by default in other places like in Automator and Script Editor.</p>
+<p>You can make shells use the <code>C</code> locale by adding <code>unset LANG</code> or <code>export LANG=C</code> to a shell configuration file, by disabling the &quot;Set locale environment variables on startup&quot; setting in Terminal, or by disabling the &quot;Set locale variables automatically&quot; setting in iTerm 2.</p>
+<p>If you use the <code>C</code> locale:</p>
+<ul>
+<li>Command line utilities stop treating multibyte characters as single characters.</li>
+<li>When the Readline line buffer contains non-ASCII characters, some characters are occasionally displayed in the wrong place, some characters occasionally get replaced with question marks, and the point is occasionally displayed in the wrong place.</li>
+<li>The Zsh line editor displays non-ASCII characters as blocks that indicate what bytes the characters contain by default.</li>
+<li><code>pbcopy</code> and <code>pbpaste</code> do not preserve non-ASCII characters.</li>
+<li><code>ls</code> displays non-ASCII characters as question marks when the output is to a terminal.</li>
+</ul>
+<p>It is usually more convenient to use a UTF-8 locale. Either add a line like <code>export LANG=en_US.UTF-8</code> to a shell configuration file or do not disable the option to set locale variables automatically in Terminal or iTerm 2.</p>
+<h2>Decomposed filenames in HFS+</h2>
+<p>HFS+ stores many non-ASCII characters in filenames in decomposed form (such as <code>LATIN SMALL LETTER A</code> followed by <code>COMBINING DIAERESIS</code>) instead of precomposed form (such as <code>LATIN SMALL LETTER A WITH DIAERESIS</code>).</p>
+<p><code>iconv -f utf-8-mac -t utf-8</code> converts text from the decomposed form used by HFS+ to precomposed form:</p>
+<pre><code>$ printf \\ue4|xxd -p
+c3a4
+$ touch $&#39;\ue4&#39;
+$ ls|tr -d \\n|xxd -p
+61cc88
+$ ls|tr -d \\n|iconv -f utf-8-mac -t utf-8|xxd -p
+c3a4</code></pre>
+<p>HFS+ does not use the standard NFD (normal form decomposed) but a variant of NFD where the characters from <code>U+2000</code> to <code>U+2FFF</code>, from <code>U+F900</code> to <code>U+FAFF</code>, and from <code>U+2F800</code> to <code>U+2FAFF</code> are not decomposed. See <a href="http://developer.apple.com/library/mac/#qa/qa1173/_index.html">http://developer.apple.com/library/mac/#qa/qa1173/_index.html</a>.</p>
+<p>In old versions of Bash, if you for example type a precomposed <code>ä</code> and press tab, a file whose name starts with a decomposed <code>ä</code> is not included in the completion results, but Bash 4.1 and later treat the precomposed and decomposed forms of characters as equivalent in contexts such as filename completion and globbing. See <a href="http://tiswww.case.edu/php/chet/bash/CHANGES">http://tiswww.case.edu/php/chet/bash/CHANGES</a>:</p>
+<pre><code>kk. Bash and readline can now convert file names between precomposed and
+    decomposed Unicode on Mac OS X (&quot;keyboard&quot; and file system forms,
+    respectively).  This affects filename completion (using new
+    rl_filename_rewrite_hook), globbing, and readline redisplay.</code></pre>
+<h2>Disabling spell checking and options in the substitutions menu</h2>
+<p>This disables spell checking in most text views:</p>
+<pre><code>defaults write -g NSAllowContinuousSpellChecking -bool false</code></pre>
+<p>The command above also makes selecting the &quot;Check Spelling While Typing&quot; menu item have no effect, but you can still check spelling manually by pressing command-;.</p>
+<p>This disables options in the substitutions menu:</p>
+<pre><code>for d in $(defaults domains|tr -d ,);do osascript -e&quot;app id\&quot;$d\&quot;&quot;||continue;for x in CheckSpellingWhileTyping SmartDashes SmartLinks SmartQuotes SmartCopyPaste TextReplacement;do defaults write $d $x -bool false;done</code></pre>
+<h2>Common extended attributes</h2>
+<ul>
+<li><code>com.apple.quarantine</code> contains a quarantine status, the time when a file was quarantined, and the application that downloaded a file.</li>
+<li><code>com.apple.metadata:kMDItemWhereFroms</code> contains the URL where a file was downloaded from, sometimes also includes the URL or chain of URLs that was redirected to that URL.</li>
+<li><code>com.apple.metadata:kMDItemDownloadedDate</code> is the time when a file was downloaded.</li>
+<li><code>_kMDItemUserTags</code> contains tags.</li>
+<li><code>com.apple.diskimages.fsck</code> contains verification status for DMG files.</li>
+<li><code>com.apple.metadata:kMDItemFinderComment</code> contains the Spotlight comment of a file. Spotlight comments are usually also stored in a <code>.DS_Store</code> file.</li>
+<li><code>com.apple.TextEncoding</code> contains the text encoding of a file saved with an application like TextEdit.</li>
+<li><code>com.apple.progress.fractionCompleted</code> contains the fraction completed for a <code>.download</code> bundle.</li>
+<li><code>com.apple.ResourceFork</code> contains a resource fork, which is not actually stored as extended attributes, even though it can be displayed and modified through the extended attributes API.</li>
+<li><code>com.apple.FinderInfo</code> contains file flags, which are not actually stored as an extended attribute, even though they can be displayed and modified through the extended attributes API.</li>
+<li><code>com.apple.system.Security</code> is used to implement ACLs. It is not shown by <code>xattr</code>.</li>
+<li><code>com.apple.decmpfs</code> is used to implement HFS+ compression. It is not shown by <code>xattr</code>.</li>
+</ul>
+<h2>DTrace scripts</h2>
+<pre><code>$ apropos dtrace|sed $&#39;s/(.*- /\t/;s/\. Uses DTrace//&#39;|awk -F\\t &#39;{printf&quot;%20s %s\n&quot;,$1,$2}&#39;
+Tcl_CommandTraceInfo monitor renames and deletes of a command
+          bitesize.d analyse disk I/O size by process
+           cpuwalk.d Measure which CPUs a process runs on
+       creatbyproc.d snoop creat()s by process name
+            dappprof profile user and lib function usage
+           dapptrace trace user and library function usage
+            diskhits disk access by file offset
+          dispqlen.d dispatcher queue length by CPU
+              dtrace generic front-end to the DTrace facility
+              dtruss process syscall details
+             errinfo print errno for syscall fails
+           execsnoop snoop new process execution
+              fddist file descriptor usage distributions
+        filebyproc.d snoop opens by process name
+           hotspot.d print disk event by location
+         httpdstat.d realtime httpd statistics
+            iofile.d I/O wait time by file and process
+           iofileb.d I/O bytes by file and process
+           iopattern print disk I/O pattern
+           iopending plot number of pending disk events
+             iosnoop snoop I/O events as they occur
+               iotop display top disk I/O events by process
+              kill.d snoop process signals as they occur
+           lastwords print syscalls before exit
+             loads.d print load averages
+           newproc.d snoop new processes
+           opensnoop snoop file opens as they occur
+         pathopens.d full pathnames opened ok count
+          perldtrace Perl&#39;s support for DTrace
+         pidpersec.d print new PIDs per sec
+           plockstat front-end to DTrace to print statistics about POSIX mutexes and read/write locks
+          priclass.d priority distribution by scheduling class
+           pridist.d process priority distribution
+         procsystime analyse system call times
+            runocc.d run queue occupancy by CPU
+           rwbypid.d read/write calls by PID
+          rwbytype.d read/write bytes by vnode type
+             rwsnoop snoop read/write events
+          sampleproc sample processes on the CPUs
+          seeksize.d print disk event seek report
+           setuids.d snoop setuid calls as they occur
+           sigdist.d signal distribution by process
+      syscallbypid.d syscalls by process ID
+     syscallbyproc.d syscalls by process name
+     syscallbysysc.d syscalls by syscall
+          topsyscall top syscalls by syscall name
+          topsysproc top syscalls by process name
+        weblatency.d website latency statistics</code></pre>
+<h2>apropos descriptions of OS X executables</h2>
+<pre><code>                 authopen open file with authorization
+              axauthorize Accessibility Authorize
+              compileHelp command-line utility to merge contextual help rtf snippets into one resource
+        configureLocalKDC generate a LocalKDC
+                    desdp scripting definition generator
+                    fwkdp FireWire KDP Tool
+                   fwkpfv FireWire kprintf viewer
+      gen_bridge_metadata Objective-C Bridges Metadata Generator
+               genstrings generate string table from source code
+          graphicssession graphics session initialization utility
+                  hdiutil manipulate disk images (attach, verify, burn, etc)
+                 inituser Creates a user&#39;s home directory and sets quota
+                  latency monitors scheduling and interrupt latency
+                 mcxquery Managed Client (MCX) compositor query tool
+          memory_pressure Tool to apply real or simulate memory pressure on the system
+          migrateLocalKDC migrates a LocalKDC
+                  mnthome mount an AFP (AppleShare) home directory with the correct privileges
+               notifyutil notification command line utility
+                  osalang information about installed OSA languages
+                 pkgbuild Build an OS X Installer component package from on-disk files
+                       pl ASCII property list utility
+             productbuild Build a product archive for the OS X Installer or the Mac App Store
+              productsign Sign an OS X Installer product archive
+                 qc2movie Quartz Composer export tool
+             qtmodernizer Tool to convert legacy movies to modern format with minimal changes
+             sandbox-exec execute within a sandbox
+         sandbox-simplify simplify a sandbox profile created by a trace directive
+                 sc_usage show system call usage statistics
+                     sdef scripting definition extractor
+                      sdp scripting definition (sdef) processor
+                 setquota Sets home directory quotas on the local computer
+                  sw_vers print Mac OS X operating system version information
+                tiff2icns converts TIFF to icns format
+ update_dyld_shared_cache Updates dyld&#39;s shared cache
+                  vm_stat show Mach virtual memory statistics
+                wait4path wait for given path to show up in the namespace
+                      xip Create a signed archive for secure distribution
+     AOSNotificationAgent Find My Mac agent
+AOSNotificationLoginAgent Find My Mac agent
+              CVMCompiler Mac OS X Core Virtual Machine Compiler
+                CVMServer Mac OS X Core Virtual Machine Server
+         FDERecoveryAgent Full Disk Encryption Key Recovery Transmission Agent
+           FileStatsAgent collect file stats
+          PasswordService Mac OS X Server Password Server daemon
+       StartupItemContext Execute a program in StartupItem context
+            SystemStarter Start, stop, and restart system services
+               aosnotifyd Find My Mac daemon
+                appsleepd app sleep daemon
+                     apsd Apple Push Notification service daemon
+               aslmanager Apple System Log data life-cycle manager
+                      asr Apple Software Restore; copy volumes (e.g. from disk images)
+                  atsutil font registration system utility
+                    audit audit management utility
+                   auditd audit log management daemon
+                    bless set volume bootability and startup disk options
+                    blued The Mac OS X Bluetooth daemon
+                    bnepd The Mac OS X Bluetooth network daemon
+             btmmdiagnose gather information to aid in diagnosing Back to My Mac issues
+                 cfprefsd defaults server
+                  configd System Configuration Daemon
+             corestoraged CoreStorage volume manager
+                 csunique modify the UUIDs of CoreStorage metadata objects
+                dirhelper helper for special directory creation
+          diskmanagementd DiskManagement.framework server
+                distnoted distributed notification server
+                  dnsextd BIND Extension Daemon
+              docsetbless Documentation set installation blesser
+           docsetinstalld Documentation set installer daemon
+               dsconfigad retrieves/changes configuration for Active Directory
+                    dserr prints a description for an error code
+            dynamic_pager external storage manager for dynamic pager
+               exfat.util ExFAT file system utility
+              fibreconfig Tool for configuring settings for Fibre Channel controllers and targets
+        filecoordinationd system-wide file access coordination
+            firmwaresyncd synchronize files used by the system firmware
+                    fontd Mac OS X system font registration manager
+                fontmover Mac OS X system font mover
+              fontrestore Restore the available system fonts to a pristine state, if possible
+               fontworker Mac OS X system font registration and validation daemon
+                     gssd Generic Security Services Daemon
+                     hdid historical mechanism for attaching disk images
+                     hdik lightweight tool to attach and mount disk images in-kernel
+                 ifcstart rebuilds international data caches
+           installer-core helper for installer tool
+                installer system software and package installer tool
+                 ipconfig view and control IP configuration state
+                  ippusbd ipp to usb bridging daemon
+                  kcproxy Keychain Proxy
+                   kdumpd Mac OS X remote kernel core dump server
+                kextcache create kext cache files
+                    kextd kernel extension server
+                 kextfind find kernel extensions (kexts) based on a variety of criteria and print information
+                 kextlibs find OSBundleLibraries needed by a kext
+                 kextload load kernel extensions (kexts) into the kernel
+               kextunload terminate driver I/O Kit driver instances and unload kernel extensions (kexts)
+                 kextutil load, diagnose problems with, and generate symbols for kernel extensions (kexts)
+                    kuncd The Kernel User Notification Center daemon
+            mDNSResponder Multicast and Unicast DNS daemon
+      mDNSResponderHelper mDNS privilege separation helper
+               mddiagnose gather information to aid in diagnosing Spotlight issues
+                      mds metadata server
+                 mdworker metadata server worker
+                    mkbom create a bill-of-materials file
+                 mkpassdb Mac OS X Server Password Server database creation tool
+                     mtmd Mobile Time Machine snapshot daemon
+                    mtmfs Mobile Time Machine file system daemon
+                  natutil Query and configure supported Network Address Translation (NAT) devices
+                    nbdst NetBoot deferred shadow tool
+                 networkd network daemon
+      networkd_privileged networkd privileged helper
+             networksetup configuration tool for network settings in System Preferences
+                     nlcd Network Link Conditioner daemon
+                  notifyd notification server
+               nsnetworkd The background NSURLSession daemon
+                ntfs.util NTFS file system utility
+             ntpd-wrapper Wrapper for ntpdate/ntpd called by launchd
+           opendirectoryd is a launchd(8) job for client access to local or remote directory systems
+              path_helper helper for constructing PATH environment variable
+                   pboard pasteboard server
+                    pictd general helper tool
+              productutil product archive utility
+                 pwpolicy gets and sets password policies
+          repair_packages verify or repair filesystem permissions and flags for packages
+                revisiond storage manager for document revisions
+                 scselect Select system configuration location
+                   scutil Manage system configuration parameters
+                    spctl SecAssessment system policy security
+                  syslogd Apple System Log server
+              systemsetup configuration tool for certain machine settings in System Preferences
+                 talagent helper agent for the Transparent App Lifecycle feature
+                      ubd ubiquity daemon, part of Documents in the Cloud
+         universalaccessd universal access server
+                     vpnd Mac OS X VPN service daemon
+              warmd_agent general helper tool
+                   wdutil Wireless Diagnostics command line utility
+            weakpass_edit Mac OS X Server Password Server weak password dictionary insertion tool
+                xpchelper XPC helper agent</code></pre>
+<p>I selected the lines above from the output of this command:</p>
+<pre><code>grep -l &#39;Mac OS X&#39; /usr/share/man/man[18]/*|sed &#39;s,.*/\(.*\)..,\1,&#39;|while read l;do apropos $l|grep &quot;^$l([18])&quot;;done</code></pre>
+<h2>Shell commands for shutting down, restarting, logging out, putting a computer to sleep, and putting displays to sleep</h2>
+<p>Shut down without showing a confirmation dialog:</p>
+<pre><code>osascript -e&#39;tell app&quot;system events&quot;to shut down&#39;</code></pre>
+<p>Shut down after showing a confirmation dialog:</p>
+<pre><code>osascript -e&#39;tell app&quot;loginwindow&quot;to«event aevtrsdn»&#39;</code></pre>
+<p>Restart without showing a confirmation dialog:</p>
+<pre><code>osascript -e&#39;tell app&quot;system events&quot;to restart&#39;</code></pre>
+<p>Restart after showing a confirmation dialog:</p>
+<pre><code>osascript -e&#39;tell app&quot;loginwindow&quot;to«event aevtrrst»&#39;</code></pre>
+<p>Log out without showing a confirmation dialog:</p>
+<pre><code>osascript -e&#39;tell app&quot;system events&quot;to«event aevtrlgo»&#39;</code></pre>
+<p>Log out after showing a confirmation dialog:</p>
+<pre><code>osascript -e&#39;tell app&quot;system events&quot;to log out&#39;</code></pre>
+<p>Go to sleep:</p>
+<pre><code>pmset sleepnow</code></pre>
+<p>Put displays to sleep:</p>
+<pre><code>pmset displaysleepnow</code></pre>
+<p>The four letter codes for Apple events are listed in <code>AERegistry.h</code>. You can open it by running <code>open -h AERegistry.h</code>.</p>
+<p>All of the <code>osascript</code> commands above send Apple events to the <code>loginwindow</code> process. <code>loginwindow</code> is sent the same Apple events when the user logs out, restarts, shuts down normally. See <a href="https://developer.apple.com/library/mac/qa/qa1134/_index.html">https://developer.apple.com/library/mac/qa/qa1134/_index.html</a>.</p>
+<p>According to <code>man shutdown</code>, <code>shutdown -h now</code> and <code>shutdown -r now</code> send processes a <code>TERM</code> signal followed by a <code>KILL</code> signal.</p>
+<p>According to the <a href="https://developer.apple.com/library/mac/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/Lifecycle.html">Daemons and Services Programming Guide</a>, when <code>loginwindow</code> is told to log out, processes that support sudden termination are sent a <code>KILL</code> signal, and processes that do not support sudden termination are terminated in different ways: Cocoa applications receive the <code>applicationShouldTerminate:</code> delegate method, foreground applications receive the <code>kAEQuitApplication</code> Apple event, background applications receive the <code>kAEQuitApplication</code> Apple event followed by a <code>KILL</code> signal, and daemons receive a <code>TERM</code> signal followed by a <code>KILL</code> signal after a few seconds.</p>
+<h2>Modifying tags with xattr</h2>
+<p>The tags for color labels have names like <code>Red\n6</code> where <code>\n</code> is a linefeed. I added the tags for all color labels to a file before running the command below.</p>
+<pre><code>$ xattr -p com.apple.metadata:_kMDItemUserTags file|xxd -r -p|plutil -convert xml1 - -o -
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+&lt;array&gt;
+    &lt;string&gt;Red
+6&lt;/string&gt;
+    &lt;string&gt;Orange
+7&lt;/string&gt;
+    &lt;string&gt;Yellow
+5&lt;/string&gt;
+    &lt;string&gt;Green
+2&lt;/string&gt;
+    &lt;string&gt;Blue
+4&lt;/string&gt;
+    &lt;string&gt;Purple
+3&lt;/string&gt;
+    &lt;string&gt;Gray
+1&lt;/string&gt;
+&lt;/array&gt;
+&lt;/plist&gt;</code></pre>
+<p>You can copy the tags of one file to another file by copying the <code>com.apple.metadata:_kMDItemUserTags</code> and <code>com.apple.FinderInfo</code> extended attributes:</p>
+<pre><code>xattr -wx com.apple.metadata:_kMDItemUserTags &quot;$(xattr -px com.apple.metadata:_kMDItemUserTags file1)&quot; file2
+xattr -wx com.apple.FinderInfo &quot;$(xattr -px com.apple.FinderInfo file1)&quot; file2</code></pre>
+<p>If the <code>kColor</code> flag in <code>com.apple.FinderInfo</code> is not set, Finder does not show the circles for color labels below or next to a file. If the <code>kColor</code> flag is set to the value for orange and a file has the red tag, Finder shows both the red and orange circles next to the file. You can set the <code>kColor</code> flag with AppleScript:</p>
+<pre><code>xattr -w com.apple.metadata:_kMDItemUserTags &#39;(&quot;Red\n6&quot;)&#39; file
+osascript -e&#39;on run{a}&#39; -e&#39;tell app&quot;finder&quot;to set label index of(posix file a as alias)to item 1 of{2,1,3,6,4,5,7}&#39; -eend file</code></pre>
+<p>You can also set the <code>kColor</code> flag with <code>xattr</code>:</p>
+<pre><code>xattr -wx com.apple.FinderInfo &#39;00 00 00 00 00 00 00 00 00 0C 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00&#39; file</code></pre>
+<p>The command above removes other file flags. It sets the color to red, but change <code>C</code> to <code>E</code> for orange, to <code>A</code> for yellow, to <code>4</code> for green, to <code>8</code> for blue, to <code>6</code> for magenta, or to <code>2</code> for gray. The flag that would add one to the values (<code>kIsOnDesk</code>) is not used in OS X.</p>
+<h2>Mounting an external drive in single user mode</h2>
+<p>Run these commands, where <code>disk1s2</code> is the identifier of the disk shown by <code>diskutil list</code>:</p>
+<pre><code>mount -uw /
+launchctl load /System/Library/LaunchDaemons/com.apple.notifyd.plist
+launchctl load /System/Library/LaunchDaemons/com.apple.kextd.plist
+mkdir /tmp/a
+mount_hfs /dev/disk1s2 /tmp/a</code></pre>
+<h2>Values of the com.apple.quarantine extended attributes</h2>
+<p>The <code>com.apple.quarantine</code> extended attributes have values like this:</p>
+<pre><code>$ xattr -p com.apple.quarantine Downloads/ubuntu-16.04-desktop-amd64.iso
+0002;572d370c;Safari.app;B0F08FB0-5B78-42DE-AEAD-BD5785EF5B04</code></pre>
+<p>The second field is a timestamp as seconds since epoch:</p>
+<pre><code>$ /bin/date -r 0x575eb8d6
+Mon Jun 13 16:44:54 EEST 2016
+$ gdate -d@$((16#575eb8d6))
+Mon Jun 13 16:44:54 EEST 2016</code></pre>
+<p>The fourth field corresponds to a UUID in <code>~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsv2</code>:</p>
+<pre><code>$ sqlite3 ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsv2 .dump|grep B0F08FB0-5B78-42DE-AEAD-BD5785EF5B04
+INSERT INTO &quot;LSQuarantineEvent&quot; VALUES(&#39;B0F08FB0-5B78-42DE-AEAD-BD5785EF5B04&#39;,484273804.205794,&#39;com.apple.Safari&#39;,&#39;Safari&#39;,&#39;http://www.nic.funet.fi/pub/mirrors/releases.ubuntu.com/16.04/ubuntu-16.04-desktop-amd64.iso&#39;,NULL,NULL,0,NULL,&#39;http://www.ubuntu.com/&#39;,NULL);
+$ sqlite3 ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsv2 .schema
+CREATE TABLE LSQuarantineEvent (  LSQuarantineEventIdentifier TEXT PRIMARY KEY NOT NULL,  LSQuarantineTimeStamp REAL,  LSQuarantineAgentBundleIdentifier TEXT,  LSQuarantineAgentName TEXT,  LSQuarantineDataURLString TEXT,  LSQuarantineSenderName TEXT,  LSQuarantineSenderAddress TEXT,  LSQuarantineTypeNumber INTEGER,  LSQuarantineOriginTitle TEXT,  LSQuarantineOriginURLString TEXT,  LSQuarantineOriginAlias BLOB );
+CREATE INDEX LSQuarantineEventIndex  ON LSQuarantineEvent (  LSQuarantineEventIdentifier );
+CREATE INDEX LSQuarantineTimeStampIndex  ON LSQuarantineEvent (  LSQuarantineTimeStamp );</code></pre>
+<p>The first field is a hexadecimal bitfield, where for example the seventh bit gets set when a file is opened, and the sixth bit gets set when a file is opened so that the warning dialog about opening a quarantined file is shown but the user presses a cancel button.</p>
+<h2>Finding the device name for the Wi-Fi network interface</h2>
+<p>Here are three ways to find the network device name (or what Apple sometimes calls the BSD name) for Wi-Fi:</p>
+<pre><code>networksetup -listallhardwareports|awk &#39;/^Hardware Port: Wi-Fi/{getline;print$2}&#39;
+sudo gem install plist;ruby -rplist -e&#39;puts Plist::parse_xml(&quot;/Library/Preferences/SystemConfiguration/NetworkInterfaces.plist&quot;)[&quot;Interfaces&quot;].select{|i|i[&quot;SCNetworkInterfaceType&quot;]==&quot;IEEE80211&quot;}[0][&quot;BSD Name&quot;]&#39;
+networksetup -listnetworkserviceorder|sed -n &#39;s/^(Hardware Port: Wi-Fi, Device: \(en.\))$/\2/p&#39;</code></pre>
+<p>In MacBook Airs without an ethernet port the device name for Wi-Fi is usually (or might always be) <code>en0</code>, in Macs with a single ethernet port it is usually (or might always be) <code>en1</code>, and in at least some Mac Pros with two ethernet ports it is <code>en2</code>.</p>
+<h2>A comparison of Movist, MPlayerX, and VLC</h2>
+<p>Movist and MPlayerX support remembering the previous playback position but VLC does not.</p>
+<p>Movist supports centering subtitles vertically but MPlayerX and VLC do not.</p>
+<p>Movist and VLC support using a custom implementation for full screen windows that does not use spaces but MPlayerX does not.</p>
+<p>Movist and MPlayerX support playing the next file in a folder after a video finishes but VLC does not, and both also have shortcuts for playing the previous or next file in a folder but VLC does not.</p>
+<p>At least with the single video file I tested with, Movist and MPlayerX were faster at seeking than VLC. With the video file that I tested with, there were no large differences between the applications in the time it took to open the file and to start playing it.</p>

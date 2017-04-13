@@ -1,0 +1,2635 @@
+Many of the commands in this file assume that filenames do not contain
+linefeeds, that IFS has not been changed, that filenames or other
+arguments to commands do not start with a dash, that the contents of
+input files or other pieces of text do not contain null bytes, that
+variables are unset, or that shells or command line utilities use the
+default settings. Some commands also assume that filenames, the
+contents of input files, or other pieces of text do not contain
+spaces, tabs, or various ASCII special characters. This file does not
+generally take into account other shells than bash and zsh or other
+platforms than OS X and GNU/Linux, and it does not generally consider
+differences between new and old versions of shells or command line
+utilities. A g prefix in the name of a command line utility indicates
+that a command relies of features that are supported by the GNU
+version of the command line utility but not by the version that comes
+with OS X, but a command line utility is sometimes assumed to be the
+GNU version even when its name does not have a g prefix.
+
+comm -13 <(sort file1) <(sort file2)
+  this requires sorting
+  the sort commands can be much faster in the C locale than in a UTF-8 locale
+awk 'NR==FNR{a[$0];next}!($0 in a)' file1 file2
+  if file1 can be empty, replace NR==FNR with FILENAME==ARGV[1], or with ARGIND==1 in gawk
+  when I compared `comm -13 <(sort file1) <(sort file2)` with this command, it was faster in the C locale but slower in a UTF-8 locale
+combine file2 not file1
+  combine is part of moreutils
+  this was slightly slower than awk in my testing in both the C locale and in a UTF-8 locale
+grep -Fxvf file1 file2
+  this is slow
+
+fdupes -dN -r .
+  -dN deletes each file except the first file in each group of duplicates
+find . -type f -exec md5sum {} +|awk 'a[$1]++'|cut -d\  -f2-|gxargs -rd\\n rm
+  replace md5sum with `md5 -r` in OS X
+  this is often slower than fdupes because fdupes compares file sizes before checksums
+
+curl -s example.com|pup 'p > a'
+  there have to be spaces around the greater than sign
+  `pup 'p > a attr{href}'` prints the values of href attributes and `pup 'p > a text{}'` prints the text of nodes
+curl -s example.com|hxselect 'p>a'
+curl -s example.com|xmllint --html --xpath //p/a -
+  the dash for STDIN cannot be omitted
+
+sort|uniq -d
+  this sorts the input
+awk '++a[$0]==2'
+  this does not sort the input
+
+sort|uniq -u
+  this sorts the input
+awk '{a[NR]=$0;++b[$0]}END{for(i in a)if(b[a[i]]==1)print a[i]}'
+  this does not sort the input
+
+#print the code point and Unicode character name of each character from STDIN
+recode ..dump|sed '1,2d;s/  *[^ ]* */ /'
+grep -o .|while IFS= read -r l;do printf %04X\\n "'$l";done|awk -F\; 'NR==FNR{a[$1]=$2;next}{print$0,a[$0]}' <(curl -s www.unicode.org/Public/UNIDATA/UnicodeData.txt) -
+  this skips null bytes and linefeeds
+
+xml fo
+  this escapes non-ASCII characters
+xmllint --format -
+  the dash for STDIN cannot be omitted
+  this escapes non-ASCII characters
+tidy -xml -i -wrap 0
+  -i indents the output and `-wrap 0` disables wrapping
+  this does not escape non-ASCII characters
+
+#consume the whole STDIN before subsequent parts of a pipeline
+sponge /dev/stdout
+printf %s\\n "$(cat)"
+  this assumes that the input does not contain null bytes in shells other than zsh
+tac|tac
+  this prints a\ncb if the input is a\nb\nc where \n is a linefeed
+
+recode ..xml
+  this escapes non-ASCII characters using numeric character references
+recode ..html
+  this escapes non-ASCII characters using either HTML character entity references or numeric character references
+xml esc
+  this does not escape double quotes or single quotes
+  this escapes non-ASCII characters using numeric character references
+jq -Rr @html
+  this does not escape non-ASCII characters or ASCII control characters so this can also be used with XML
+sed 's/&/\&amp;/g;s/</\&lt;/g;s/>/\&gt;/g;s/'\''/\&apos;/g;s/"/\&quot;/g'
+(x=$(cat);x=${x//&/&amp;};x=${x//</&lt;};x=${x//>/&gt;};x=${x//"'"/&apos;};printf %s\\n "${x//\"/&quot;}")
+  ${x//"'"/&apos;} can be replaced with ${x//\'/&apos;} in zsh but not in bash
+
+recode xml
+xml unesc
+  this does not unescape &quot;, &apos;, or numeric character references
+sed 's/&amp;/\&/g;s/&lt;/</g;s/&gt;/>/g;s/&quot;/"/g;s/&apos;/'\''/g'
+  this does not escape numeric character references
+  these five are the only predefined entities in XML
+
+recode html
+ruby -rcgi -pe'$_=CGI.unescapeHTML$_'
+
+for ((i=0x3040;i<=0x309f;i++));do x=$(printf %08x $i);printf \\U$x\\n;done
+  use `printf %b` in zsh when the range of characters includes U+0025 (percent sign), because `printf \\U25` results in an error in zsh
+printf $(printf '\\U%08x\\n' $(seq $((0x3040)) $((0x309f))))
+
+ghead -n-1
+sed \$d
+
+tac
+  GNU
+  this prints cb\na if the input is a\nb\nc where \n is a linefeed
+tail -r
+  BSD
+  this prints cb\na if the input is a\nb\nc where \n is a linefeed
+sed -n '1!G;h;$p'
+  G appends a linefeed followed by the contents of the hold space to the pattern space
+  h sets the hold space to the contents of the pattern space
+awk '{a[NR]=$0}END{for(i=NR;i>=1;i--)print a[i]}'
+awk '{x=$0"\n"x}END{printf"%s",x}'
+
+jq
+python -mjson.tool|pygmentize -l javascript
+
+find . -maxdepth 1 -type f -mtime -7 -exec grep -H pattern {} +
+  this includes files whose name starts with a period
+grep -H pattern *(m-7)
+  zsh
+  this results in an error when there are no matches for the glob
+
+#add a linefeed to the end of the input if the input does not end with a linefeed and is not empty
+awk 1
+grep ^
+sed '$a\'
+printf %s\\n "$(cat)"
+  this also removes empty lines from the end of the input
+  this prints an empty line if the input is empty
+sed -n p
+  this works with BSD sed but not with GNU sed
+  you can also just use sed without arguments with BSD sed
+
+perl -pe'chomp if eof'
+awk 1|ghead -c-1
+awk 'NR>1{print x}{x=$0}END{printf"%s",$0}'
+printf %s "$(cat)"
+  this also removes empty lines from the end of the input
+perl -p0777e's/\n\z//'
+
+awk NF
+grep '[^ \t]'
+grep \\S
+  this also treats \f, \r, and \v as whitespace characters
+  at least GNU grep in OS X and Ubuntu and OS X's grep also treat characters such as ideographic space as space characters in a UTF-8 locale
+
+awk '{print substr($0,1,length-3)}'
+rev|cut -c4-|rev
+  -c counts bytes instead of multibyte characters in coreutils
+sed 's/^.\{,2\}$//;s/...$//'
+sed 's/...$//'
+  this does not make lines whose length is two or one characters empty
+while IFS= read -r l;do printf %s\\n "${l%???}";done
+  this does not make lines whose length is two or one characters empty
+while IFS= read -r l;do printf %s\\n "${l:0:-3}";done
+  at least zsh 4.3.12 and later and bash 4.0 and later
+  this results in an error if the length of some line is two or fewer characters
+  ${l:0:-3} can be replaced with ${l::-3} in bash but not in zsh
+
+awk '{x+=$0}END{print x}'
+jq -s add
+  -s (--slurp) creates an array for the input lines after parsing each line as JSON or as a number in this case
+paste -sd+ -|bc
+(x=$(cat);echo $((${x//$'\n'/+})))
+  this does not work with numbers that have a fractional part in bash but does in zsh and ksh
+perl -ne'$x+=$_}{print"$x\n"'
+
+shuf
+gsort -R
+  this always prints identical lines and other lines that have the same collation order after each other
+awk 'BEGIN{srand()}{print rand(),$0}'|sort|cut -d\  -f2-
+  this prints the lines in the same order if it is ran twice within the same second
+  there is a chance that two lines get the same random number
+while IFS= read -r l;do printf %s\\n "$RANDOM$RANDOM $l";done|sort|cut -d\  -f2-
+  this is slow and there is a chance that two lines get the same random number
+perl -MList::Util=shuffle -e'print shuffle<>'
+python -c'import sys,random;l=sys.stdin.readlines();random.shuffle(l);print"".join(l),'
+ruby -e'puts readlines.shuffle'
+
+sed -n '/pattern/{n;n;p;}'
+awk '/pattern/&&getline&&getline'
+  `awk '/pattern/{getline;getline;print}'` would print the last line if the last or second last line matches the pattern
+
+sed '/pattern/{n;s/aa/bb/;}'
+awk '/pattern/{print;if(!getline)exit;sub(/aa/,"bb")}1'
+  if(!getline)exit can be replaced with getline if the pattern does not occur on the last line
+
+sed /pattern/,/^/d
+  this deletes the last line if the last line matches the pattern but the second last line does not
+gsed /pattern/,+1d
+  this deletes the last line if the last line matches the pattern but the second last line does not
+awk '/pattern/{getline;next}1'
+  this deletes the last line if the last line matches the pattern but the second last line does not
+sed '/pattern/{$!N;d;}'
+  if the last line matches the pattern but the second last line does not, this does not delete the last line without $! in GNU sed but does in OS X's sed
+  if all lines match the pattern, this prints the last line without $! in GNU sed but not in OS X's sed
+
+sort|uniq -c|sort -n|sed 's/^ *//'
+  -n is only needed if some line appears 10 million or more times in the input
+  this was about ten times faster in the C locale than in a UTF-8 locale for an input with a million lines in my testing
+gawk '{++a[$0]}END{PROCINFO["sorted_in"]="@val_num_asc";for(i in a)print a[i],i}'
+  this was slightly faster than `LC_ALL=C sort|LC_ALL=C uniq -c|LC_ALL=C sort -n` in my testing
+
+awk length==4
+grep -x ....
+sed '/^.\{4\}$/\!d'
+
+pandoc -f html -t markdown_strict --no-wrap --atx-headers
+  markdown_strict uses Markdown.pl syntax without Pandoc extensions
+html2text
+
+x=12345;printf %02d:%02d:%02d\\n $((x/3600)) $((x%3600/60)) $((x%60))
+  POSIX
+echo 12345|awk '{printf"%02d:%02d:%02d\n",$0/3600,$0%3600/60,$0%60}'
+  POSIX
+TZ=UTC0 printf '%(%H:%M:%S)T\n' 12345
+  bash
+date -ud@12345 +%T
+  GNU
+date -ur12345 +%T
+  BSD
+
+echo 23:59:59|awk -F: '{print 3600*$1+60*$2+$3}'
+x=23:59:59;IFS=:;set $x;echo $(($1*3600+$2*60+$3))
+  this does not work in zsh without `setopt shwordsplit`
+gdate -d'1970-01-01 23:59:59' +%s
+
+while IFS= read -r l;do curl -G --data-urlencode "query=$l" example.com;done
+  --data-urlencode implies sending a POST request so -G is needed to send a GET request
+jq -Rr @uri|xargs -I, curl 'example.com/?query=,'
+  `jq -Rr @uri` does not escape single quotes, so this assumes that the input does not contain single quotes when not using GNU xargs where -I implies -d\\n
+
+sed 51,100\!d
+awk NR==51,NR==100
+tail -n+51|head -n50
+
+awk /pattern/,0
+sed '/pattern/,$!d'
+
+sed /pattern/q
+sed 1,/pattern/\!d
+awk NR==1,/pattern/
+awk '1;/pattern/{exit}'
+
+gsed /pattern/Q
+  Q quits without printing the pattern space
+sed '/pattern/,$d'
+awk '/pattern/{exit}1'
+
+awk 'NR>4&&/./'
+sed '5,${/^$/d;}'
+
+find . -type d ! -name . -exec mkdir /tmp/{} \;
+find . -type d ! -name . -print0|(cd /tmp;xargs -0 mkdir)
+rsync -r --include \*/ --exclude \* . /tmp
+for d in **/;do mkdir -p /tmp/"$d";done
+  **/ also includes symlinks to directories
+  ** traverses symlinks to directories in bash 4.2 and earlier
+
+date -d @1234567890 '+%F %T'
+  GNU
+date -r 1234567890 '+%F %T'
+  BSD
+awk 'BEGIN{print strftime("%F %T",1234567890)}'
+  gawk and mawk have strftime but nawk does not
+
+date -d 2013-12-31T23:59:59 +%s
+  GNU
+date -jf %FT%T 2013-12-31T23:59:59 +%s
+  BSD
+  -j disables changing the system date and -f specifies a format
+
+date -d '2 weeks ago' +%s
+  GNU
+date -v -14d +%s
+  BSD
+
+date -d '2013-12-31 +7 days' +%F
+  GNU
+date -v+7d -jf %F 2013-12-31 +%F
+  BSD
+
+date -d 'next monday'
+  GNU
+date -v +1d -v +mon
+  BSD
+
+sed -i '$a\' file
+  replace -i with `-i ''` for BSD sed
+{ rm file;awk 1 >file; }<file
+[ -n "$(tail -c1 file)" ]&&[ -s file ]&&echo>>file
+  `$(tail -c1 file)` is empty if the file ends with a linefeed, is empty, does not exist, or for example is a directory or not readable
+  `-s file` is false if the file is empty or does not exist
+ed file<<<wq
+
+i=1;while read l;do mkdir $i;mv $l $((i++));done< <(ls|xargs -n100)
+ls|parallel -n100 mkdir {#}\;mv {} {#}
+  -n100 takes 100 arguments at a time and {#} is the sequence number of the job
+ls|rename --stdin -p 's,^,int($N/100+1)."/",e'
+  -p is needed to create directories in the implementation by Aristotle Pagaltzis which is installed by `brew install rename`
+  $N is the number of the file in the implementation by Aristotle Pagaltzis but in other implementations you can use $. or ++$::i
+  --stdin is needed to get paths from STDIN in the implementation by Aristotle Pagaltzis
+
+tac file|awk '!a[$0]++'|tac
+gawk '{a[$0]=NR}END{PROCINFO["sorted_in"]="@val_num_asc";for(i in a)print i}' file
+awk 'NR==FNR{a[$0]=NR;next}a[$0]==FNR' file{,}
+
+gsed -i '1iline to prepend' file
+sed -i '' $'1i\\\nline to prepend\n' file
+  BSD
+(echo 'line to prepend';cat file)|sponge file
+printf %s\\n 0a 'line to prepend' . w|ed -s file
+perl -i -pe'print"line to prepend\n"if$.==1' file
+
+printf %s\\n "!!"
+  the double quotes disable word splitting and quote removal in bash but they are not needed in zsh
+  this only prints the last line of multiline commands in bash but not in zsh
+fc -nl -1
+  zsh
+  this replaces newlines in multiline commands with \n
+fc -nl -1|cut -c3-
+  bash
+  -n includes a tab and a space before the command in bash
+  this only prints the last line of multiline commands
+!!:p
+  p prints a designator
+  this only prints the last line of multiline commands in bash but not in zsh
+history -p '!!'
+  bash
+  this only prints the last line of multiline commands
+
+find . -mindepth 1 -maxdepth 1 -size 12345c -delete
+gstat -c'%s %n' *|awk '$1==12345{print$2}'|xargs rm
+rm *(L12345)
+  zsh
+
+sed '5s/.*/aa/'
+sed $'5c\\\naa\n'
+  c changes a line
+  POSIX and BSD sed require c to be followed by a backslash and a newline
+gsed 5caa
+awk 'NR==5{$0="aa"}1'
+
+grep -o .
+  -o is not in POSIX
+  add -a if the input contains null bytes
+fold -w1
+  GNU fold does not treat multibyte characters as single characters but OS X's fold does
+  this includes empty lines for second and further consecutive linefeeds
+sed $'s/./&\\\n/g'
+  this includes empty lines for linefeeds
+gsed 's/./&\n/g'
+  this includes empty lines for linefeeds
+while IFS= read -r -n1 c;do printf %s\\n "$c";done
+  bash
+  this includes empty lines for linefeeds
+  this skips null bytes
+awk '{$1=$1}1' FS= OFS=\\n
+  this includes empty lines for second and further consecutive linefeeds
+
+grep -Eo '[^ ]+'
+tr -s ' ' \\n
+  this includes an empty line at the start of the output if the input starts with a space
+fmt -w1
+  this keeps spaces at the beginning of lines
+  in OS X `fmt -w1` does not fold lines that start with a period but `fmt -nw1` does
+  coreutils fmt always folds lines that start with a period and does not have -n
+
+dos2unix *
+  this also removes BOMs and converts UTF-16 to UTF-8
+recode /crlf.. *
+gsed -i 's/\r//' *
+  this also removes carriage returns that are not followed by a linefeed
+sed -i '' $'s/\r//' *
+  BSD
+  this also removes carriage returns that are not followed by a linefeed
+for f in *;do tr -d \\r<$f 1<>$f;done
+  this also removes carriage returns that are not followed by a linefeed
+
+#convert CRLF and CR line endings to LF
+awk 1 'RS=\r\n?|\n'
+  this does not work with nawk which does not treat a two character or longer RS as a regex
+  without |\n linefeeds that are not preceded by a carriage return would be doubled
+awk '{gsub(/\r\n?/,"\n");printf"%s",$0}' RS=\\0
+  gawk and mawk support RS=\\0 but nawk does not
+  this assumes that the input does not contain null bytes
+(x=$(cat);x=${x//$'\r\n'/$'\n'};x=${x/%$'\r'};printf %s\\n "${x//$'\r'/$'\n'}")
+  without x=${x/%$'\r'}; two linefeeds are printed at the end when the input ends with \r
+
+ps -C processname -o comm=
+  procps but not OS X
+  -C matches process names in the procps implementation but has a different meaning in OS X
+  process names are truncated to 15 characters in Linux
+pgrep -x processname
+  procps and OS X
+ps -eco comm=|grep -x processname
+  OS X but not procps
+  -c changes the comm column from the absolute path to the process name in OS X's ps
+ps -eo comm=|sed 's,.*/,,'|grep -x processname
+  procps and OS X
+
+sox [1-3].wav concatenated.wav
+ffmpeg -f concat -safe 0 -i <(printf "file '%s'\n" "$PWD"/[1-3].wav) -c copy concatenated.wav
+  the paths of the input files have to be absolute
+  `-safe 0` is needed in new versions of ffmpeg when the path of some input file is absolute
+ffmpeg -i{1..3}.wav -filter_complex concat=n=3:v=0:a=1 concatenated.wav
+
+echo $((1$(echo \*{2..6})))
+seq 6|paste -sd\* -|bc
+seq -s\* 6|bc
+  -s changes the separator
+x=1;for i in {1..6};do ((x*=i));done;echo $x
+seq 6|awk '{x*=$0}END{print x}' x=1
+bc<<<'define f(x){if(x<=1)return(1);return(f(x-1)*x);};f(6)'
+jq -n 'reduce range(1;7)as$x(1;.*$x)'
+  -n is --null-input
+
+LC_ALL=C tr a-z A-Z
+  LC_ALL=C is not needed with GNU tr which does not support Unicode or in OS X which uses code point collation order in UTF-8 locales
+tr '[:lower:]' '[:upper:]'
+  this applies to non-ASCII characters in a UTF-8 locale in OS X's tr but not in GNU tr
+dd conv=ucase
+  this does not apply to non-ASCII characters in a UTF-8 locale in at least GNU dd or OS X's dd
+awk '{print toupper($0)}'
+  this applies to non-ASCII characters in a UTF-8 locale in gawk but not in nawk or mawk
+gsed 's/.*/\U&/'
+  this applies to non-ASCII characters in a UTF-8 locale
+(x=$(cat);printf %s\\n "${x^^}")
+  bash
+  this applies to non-ASCII characters in a UTF-8 locale
+(x=$(cat);printf %s\\n $x:u)
+  zsh
+  this applies to non-ASCII characters in a UTF-8 locale
+perl -pe'$_=uc'
+  this does not apply to non-ASCII characters in a UTF-8 locale unless you add PERLIO=:utf8
+
+gfind -xtype l
+find . -type l -exec test ! -e {} \; -print
+
+ffmpeg -i file.flac -aq 2 file.mp3
+  this preserves tags but not cover art
+flac -cd file.flac|lame -V2 - file.mp3
+  this does not preserve tags or cover art
+  -c is --stdout and -d is --decode
+
+awk '{print length,$0}'|sort -n|cut -d\  -f2-
+jq -R .|jq -sr 'sort_by(length)[]'
+  `jq -R .` prints a JSON string literal for each line and -s creates an array for the input lines after parsing each line as JSON
+ruby -e'puts readlines.sort_by(&:length)'
+perl -e'print sort{length$a<=>length$b}<>'
+
+paste -d\; - - -
+awk 'ORS=NR%3?";":"\n"'
+  this prints a semicolon and no linefeed at the end if the number of lines is not a multiple of three
+sed '$!N;$!N;s/\n/;/g'
+sed 'N;N;s/\n/;/g'
+  if the remainder of the number of lines divided by three is one, this exits before the pattern space is printed on the last line with OS X's sed
+  if the remainder of the number of lines divided by three is two, this exits on the last line before the s function is executed in GNU sed and before the pattern space is printed in OS X's sed
+
+gsed /pattern/,+2d
+  if the pattern appears on the first two lines but not on the next two lines, this only deletes the first three lines
+awk '/pattern/{n=3}n{n--;next}1'
+  if the pattern appears on the first two lines but not on the next two lines, this deletes all four lines
+
+sed -n '/pattern/{p;n;n;d;};p'
+awk 'n>0{n--;next}/pattern/{n=2}1'
+
+awk 'NR%5==2||NR%5==3'|paste - -
+gsed -n '2~5p;3~5p'|paste - -
+paste - - - - -|cut -f2,3
+
+#generate a random MAC address, using random bits for the bits that indicate if the address is unicast or multicast and globally unique or locally administered
+for i in {1..6};do printf %02X\\n $((RANDOM%256));done|paste -sd: -
+hexdump -n6 -e '/1 ":%02X"' /dev/random|cut -c2-
+openssl rand -hex 6|fold -w2|paste -sd: -
+jot -w%02X -s: -r 6 1 256
+  -w changes the format, -s changes the separator, and -r generates random numbers
+od -N6 -tx1 -An /dev/random|awk '$1=$1'|tr \  :
+  OS X's od uses a different output format than GNU od where there are multiple spaces instead of one space at the start of each line, two spaces instead of one space between columns, and spaces at the end of lines
+
+#convert hiragana to katakana
+tr $'[\u3040-\u309f]' $'[\u30a0-\u30ff]'
+  this does not work with GNU tr which does not support Unicode
+ruby -pe'$_.tr!"\u{3040}-\u{309f}","\u{30a0}-\u{30ff}"'
+
+seq 1 3 7
+  seq is not in POSIX
+  OS X's seq uses scientific notation for 1,000,000 and larger numbers and -1,000,000 and smaller numbers with the default format
+printf %s\\n {1..7..3}
+  at least bash and zsh
+for ((i=1;i<=7;i+=3));do echo $i;done
+  the arithmetic for command is not in POSIX
+  zsh requires adding a space before the first opening parenthesis but bash does not
+jot - 1 7 3
+
+#remove non-ASCII characters from UTF-8 text
+tr -dc \\0-\\177
+iconv -c -f utf-8 -t ascii
+  -c discards characters that cannot be converted
+
+gsed 0~4G
+sed 'n;n;n;G'
+awk '1;NR%4==0{print""}'
+awk 'ORS=NR%4?"\n":"\n\n"'
+
+gcp --parents dir1/file dir2
+rsync -R dir1/file dir2
+  -R is --relative
+pax -rw dir1/file dir2
+  -rw (read and write) copies files
+  pax is required by POSIX but not by LSB and it is not included with some Linux distributions
+
+cat file2 file1|sponge file1
+{ rm file1;cat file2 ->file1; }<file1
+gsed -i '1{x;s/.*/cat file2/ep;x}' file1
+echo $'0r file2\n.\nw'|ed -s file1
+
+grep aa|grep -v bb
+awk '/aa/&&!/bb/'
+sed '/aa/!d;/bb/d'
+ggrep -P '(?=.*aa)(?!.*bb)'
+
+gsed '/pattern/,+2!d'
+  if the pattern appears on the first two lines but not on the next two lines, this does not print the fourth line
+awk '/pattern/{for(i=NR;i<=NR+2;i++)a[i]}NR in a'
+  if the pattern appears on the first two lines but not on the next two lines, this prints the fourth line
+perl -ne'if(/pattern/){print;foreach(1..2){$n=<>;print$n}}'
+  if the pattern appears on the first two lines but not on the next two lines, this does not print the fourth line
+grep -A2 pattern
+  this prints dashes between groups of matches
+
+awk '/pattern1/&&/pattern2/{sub(/aa/,"bb")}1'
+gsed '/pattern1/!b;/patttern2/!b;s/aa/bb/'
+  b branches to the end of the script
+
+find . -name \*.jpg|xargs identify -format '%h %f\n'|awk '$1>500{print$2}'
+exiftool -if '$ImageHeight>500' -p '$Directory/$FileName' -r .
+mdfind 'kMDItemFSName=*.jpg&&kMDItemPixelHeight>500' -onlyin .
+  OS X
+
+mv **/* /tmp
+  this can result in an argument list too long error
+find . -mindepth 1 -exec gmv -t/tmp {} +
+find . ! -name . -exec sh -c 'mv "$@" /tmp' _ {} +
+  POSIX
+printf %s\\n **/*|gxargs -d\\n gmv -t/tmp
+  this assumes that filenames do not contain linefeeds
+find . -mindepth 1|parallel -X mv {} /tmp
+  -X takes multiple arguments at a time
+  this assumes that filenames do not contain linefeeds
+find . -mindepth 1 -exec mv {} /tmp \;
+  this runs one mv process for each file
+
+jot -r 2 1 6
+  -r generates random numbers
+shuf -i1-6 -n2 -r
+  -r allows repetitions
+
+grep aa|grep bb
+awk '/aa/&&/bb/'
+sed '/aa/!d;/bb/!d'
+sed -n '/aa/{/bb/p;}'
+ggrep -P '(?=.*aa)(?=.*bb)'
+agrep 'aa;bb'
+
+awk NR%3==0
+sed -n 'n;n;p'
+gsed 0~3\!d
+
+grep -o 'href="[^"]*'|cut -d\" -f2
+ggrep -Po 'href="\K[^"]*'
+  \K resets the start of the match
+ggrep -Po '(?<=href=")[^"]+'
+pcregrep -o1 'href="([^"]*)'
+  -o1 prints only the first captured group
+
+sed -n s/^prefix//p
+  `sed s/^prefix//\!d` does not work because the s function is not an address
+awk 'sub(/^prefix/,"")'
+ggrep -Po '^prefix\K.*'
+  \K resets the start of the match
+
+find . -type f -perm +100
+gfind -type f -executable
+  this considers ACLs
+print -rl **/*(*)
+  zsh
+
+gstat -c%U file
+  %U is username and %u is UID
+gfind file -printf %u\\n
+  %u is username and %U is UID
+stat -f%Su file
+  BSD
+
+ghead -n-10
+tail -r|tail -rn+11
+  BSD
+awk 'NR>n{print a[NR%n]}{a[NR%n]=$0}' n=10
+awk '{a[NR]=$0}END{for(i=1;i<=NR-10;i++)print a[i]}'
+gsed -ne':1;N;1,10b1;P;D'
+  P prints the first line of the pattern space and D deletes the first line of the pattern space
+(x=$(cat);sed $(($(wc -l<<<"$x")-10))q<<<"$x")
+  the command substitution removes empty lines from the end of the input
+  this results in an error if the input contains 10 or fewer lines
+ruby -e'puts readlines[0..-11]'
+python -c'import sys;print"".join(sys.stdin.readlines()[0:-10]),'
+  this prints an empty line if the input contains 10 or fewer lines
+
+awk '!a[$0]++' file|sponge file
+{ rm file;awk '!a[$0]++'>file; }<file
+sort -u file -o file
+  this also sorts the file
+ruby -i -e'puts readlines.uniq' file
+
+tail -c+4
+  this applies to bytes instead of multibyte characters
+dd bs=3 skip=1
+  this applies to bytes instead of multibyte characters
+(read -n3 -d '';cat)
+  bash
+  without `-d ''` the read command would only read until the first linefeed
+  this gives the wrong result if either of the first two characters is null
+  this applies to multibyte characters in a UTF-8 locale
+(read -k3 -u0;cat)
+  zsh
+  -k3 reads three characters like -n3 in bash, but it implies reading from a terminal so -u0 is needed to read from STDIN
+  this applies to multibyte characters in a UTF-8 locale
+(x=$(cat);printf %s\\n "${x:3}")
+  this prints an empty line if the input contains two or fewer characters
+  this gives the wrong result if the input contains a null byte in shells other than zsh
+  this applies to multibyte characters in a UTF-8 locale in at least bash and zsh
+  the command substitution removes linefeeds from the end of the input
+
+gstat -c%s file
+  %s is size in bytes in GNU stat and GNU find
+gfind file -printf %s\\n
+stat -f%z file
+  BSD
+ls -l file|awk '{print$5}'
+  POSIX
+wc -c<file
+  POSIX
+  this reads the whole file
+gdu -b file|cut -f1
+  -b prints sizes in bytes in GNU du
+
+awk -F/ '{print$(NF-1)}'
+  this prints the whole line on lines that do not contain a forward slash and are not empty because $(NF-1) is treated as $0
+  this results in an error on empty lines
+rev|cut -d/ -f2|rev
+  add -s to not print the whole line on lines that do not contain a forward slash
+sed 's,.*/\([^/]*\)/.*,\1,'
+  this prints the whole line on lines that do not contain a forward slash or that contain one forward slash
+
+awk -F/ 'NF>3'
+grep '/.*/.*/'
+
+tac|gsed /pattern/Q|tac
+  Q quits before the pattern space is printed
+gsed ':1;/pattern/{d;b};N;b1'
+sed -e:1 -e'/pattern/{d;b' -e';}' -e'$q;N;b1'
+  N is replaced with $q;N because BSD sed does not print the pattern space before it exits when N is used on the last line
+awk '{if(/pattern/){x=""}else{x=x$0"\n"}}END{printf"%s",x}'
+awk '{a[NR]=$0}/pattern/{n=NR+1}END{for(i=n;i<=NR;i++)print a[i]}' n=1
+
+perl -pe's/\\\n//'
+awk '{if(sub(/\\$/,""))printf"%s",$0;else print}'
+awk 'sub(/\\$/,""){printf"%s",$0;next}1'
+(x=$(cat);printf %s\\n "${x//$'\\\n'}")
+  if the last line ends with a backslash, this does not remove the backslash
+gsed ':1;/\\$/{N;s/\\\n//;b1}'
+  if the last line ends with a backslash, this does not remove the backslash
+sed -e:1 -e'/\\$/{$q;N;s/\\\n//;b1' -e';}'
+  if the last line ends with a backslash, this does not remove the backslash
+  N is replaced with $q;N because BSD sed does not print the pattern space before it exits when N is used on the last line
+
+sha256sum|cut -d\  -f1
+  coreutils
+openssl dgst -sha256
+shasum -a 256|cut -d\  -f1
+  at least OS X, Debian, and Cygwin
+
+md5sum file|cut -d\  -f1
+  coreutils
+md5 -q file
+  at least OS X
+  -q prints only the checksum
+openssl dgst -md5 file|awk '{print$NF}'
+
+md5sum file
+  coreutils
+md5 -r file
+  BSD
+  -r (reverse) uses a format like `0cc175b9c0f1b6a831c399e269772661 file` instead of `MD5 (file) = 0cc175b9c0f1b6a831c399e269772661`
+
+printf '\e[33;1mbold yellow\e[m\n'
+printf %s\\n "$(tput setaf 3)$(tput bold)bold yellow$(tput sgr0)"
+
+base64
+  at least coreutils and OS X
+recode ../base64
+openssl enc -base64
+uuencode -m -|sed '1d;$d'
+  uuencode is required by POSIX but not by LSB and it is not included with some Linux distributions
+
+find . -mindepth 1
+find . ! -name .
+  POSIX
+
+find . -mindepth 1 -maxdepth 1
+find . ! -name . -prune
+  POSIX
+
+(sleep 3600;~/bin/script.sh)&disown
+at -f ~/bin/script.sh +1hour
+
+(IFS= read -r x;printf %s\\n "$x";sort)
+(gsed -u 1q;sort)
+  -u is unbuffered
+awk 'NR==1;NR>1{print|"sort"}'
+
+find . -type f -exec gcp --parents -t /tmp {} +
+  for example `gcp --parents aa/bb /tmp` copies aa/bb to /tmp/aa/bb
+rsync -R "$(find . -type f)" /tmp
+  -R (--relative) is like --parents in GNU cp
+find . -type f|pax -rw /tmp
+  -rw (read and write) copies files
+find . -type f|cpio -pdu /tmp
+  -p (pass-through) copies files whose paths are read from STDIN to the specified directory
+  -d creates parent directories that do not exist
+  -u unconditionally overwrites existing files
+find . -type f|tar -c -T -|tar -C /tmp -x
+  -T is --files-from and -C changes the directory
+
+gtar -czf dir.tgz --transform s/aa/bb/ dir
+bsdtar -czf dir.tgz -s/aa/bb/ dir
+pax -w -s/aa/bb/ dir|gzip>dir.tgz
+  -w writes an archive to stdout
+
+soxi -D input.wav
+  -D prints the duration
+ffprobe -v 0 -i input.wav -show_streams|sed -n s/^duration=//p
+  `-v 0` disables the default STDERR output
+mdls -rnkMDItemDurationSeconds input.wav
+  OS X
+
+#print the last two comma-delimited columns on each line assuming that each line contains at least one comma
+rev|cut -d, -f-2|rev
+awk -F, '{print$(NF-1)FS$NF}'
+sed 's/.*,\(.*,[^,]*\)/\1/'
+
+gsed 's/./\u&/'
+  \u converts the next character to uppercase
+while IFS= read -r l;do echo "${l^}";done
+  bash
+perl -pe'$_=ucfirst$_'
+
+awk '!a[$3]++'
+sort -uk3,3
+  this also sorts the input
+perl -ane'print if!$a{$F[2]}++'
+  -a (autosplit) sets $F to `split(' ')` where the delimiter can be changed with -F
+jq -R .|jq -sr 'unique_by(split(" ")[2])[]'
+  this also sorts the input
+
+gdate +%s -r file
+gstat -c%Y file
+stat -f%m file
+  BSD
+gfind file -printf %Ts\\n
+
+(($(date +%s)-$(gstat -c%Y file)<86400*7));echo $?
+find file -mtime -7d|read;echo $?
+a=(file(Nm-7));(($#a));echo $?
+  zsh
+  N enables null_glob
+
+head -n10 file1 >>file2;gsed -i 1,10d file1
+gsed -i -e1,10wfile2 -e1,10d file1
+
+for d in **/;do ls "$d"|grep -q '\.mp3$'&&mv "$d" /tmp;done
+find . -name \*.mp3|sed 's,/[^/]*$,,'|sort -u|gxargs -d\\n gmv -t /tmp
+
+rm $(ls|ghead -n-5)
+rm *([1,-6])
+  zsh
+a=(*);rm ${a[@]:0:${#a[@]}-5}
+  [@] and ${#a[@]} can be removed in zsh but not in bash
+set *;rm ${@:1:$# -5}
+  the space before the minus sign is required in zsh but not in bash
+  $# can be removed in zsh but not in bash
+
+ls -dt **/*
+  **/* can be replaced with ** in bash but not in zsh, even though that includes the directories themselves like find without `-mindepth 1`
+  this can result in an argument list too long error
+gfind -mindepth 1 -printf '%Ts %p\n'|sort -rn|cut -d\  -f2-
+find . -mindepth 1 -exec stat -f'%m %N' {} +|sort -rn|cut -d\  -f2-
+  BSD
+print -rl **/*(om)
+  zsh
+  om orders files by modification time
+
+ls -dS **/*
+  this can result in an argument list too long error
+gfind -mindepth 1 -printf '%s %p\n'|sort -n|cut -d\  -f2-
+  %s is size in bytes
+print -rl **/*(oL)
+  zsh
+  oL orders by size (length)
+
+echo a;sleep 1;tput cuu1;tput el;echo b
+  `tput cuu1` (\e[A in xterm) moves the cursor up one line and `tput el` (\e[K in xterm) erases the line
+printf a;sleep 1;printf '\r\e[K';printf b;echo
+  \r moves to the beginning of the line
+
+sed -n '/pattern/{n;p;}'
+awk '/pattern/&&getline'
+  `awk '/pattern{getline;print}'` would print the last line when the last line matches the pattern
+
+tar -xf file.tgz --strip-components 1
+tar -dc file.tgz|pax -r -s '^[^/]*$' -s '[^/]*/'
+  -r reads an archive from STDIN and -s substitutes a pattern
+
+sed 1,/pattern/s/aa/bb/g
+awk 'NR==1,/pattern/{gsub(/aa/,"bb")}1'
+
+#keep the original file when creating a gzip archive
+gzip -c file>file.gz
+  -c outputs to STDOUT and keeps the original file
+gzip -k file
+  -k keeps the original file in at least GNU gzip and new versions of OS X's gzip
+
+#remove empty lines from the end of the input
+printf %s\\n "$(cat)"
+tac|awk /./,0|tac
+  this assumes that the input ends with a linefeed because this prints a\ncb if the input is a\nb\nc where \n is a linefeed
+gsed ':1;/^\n*$/{$d;N;b1}'
+
+#remove empty lines from the start and end of the input
+perl -0777pe's/^\n*//;s/\n*$/\n/'
+  -0777 sets $_ to the whole input
+awk /./,0|tac|awk /./,0|tac
+printf %s\\n "$(awk /./,0)"
+gsed '/./,$!d;:1;/^\n*$/{$d;N;b1}'
+
+sed 2rfile2 file1
+awk '1;NR==2{system("cat file2")}' file1
+sed 2q file1;cat file2;sed 1,2d file1
+  this prints the contents of file2 even when file1 is empty or only one line long
+
+for f in *;do mv "$f" "${f,,}";done
+  bash 4.0 and later
+  replace ${f,,} with ${f:l} in zsh
+rename '$_=lc($_)' *
+rename y/A-Z/a-z/ *
+autoload -U zmv;zmv '(*)' '$1:l'
+  zsh
+autoload -U zmv;zmv -w '*' '$1:l'
+  zsh
+  -w captures wildcards
+
+curl -I example.com
+  -i includes headers and -I prints only headers
+wget -S example.com
+  -S is --server-response
+
+awk -F/ '{print$NF}'
+  this prints the whole line on lines that do not contain a forward slash
+sed 's,.*/,,'
+  this prints the whole line on lines that do not contain a forward slash
+rev|cut -d/ -f1|rev
+  this prints the whole line on lines that do not contain a forward slash
+
+[ -t 0 ]
+  -t tests if a file descriptor is opened on a terminal
+tty -s
+  this has been deprecated by POSIX in favor of `[ -t 0 ]`
+
+awk '{print NR,$0}'
+sed =|paste -d\  - -
+nl|sed 's/^ *\([0-9]*\)./\1 /'
+  the period is used to match a tab because \t is a GNUism
+cat -n|sed 's/^ *\([0-9]*\)./\1 /'
+perl -pe's/^/$. /'
+grep -n ^|sed 's/:/ /'
+
+#add line numbers for non-empty lines
+nl -bt
+  -b specifies a type and t is the type for non-empty lines
+cat -b
+awk '/./{printf"%6d\t",++i}1'
+
+awk -F\\t '{printf"%-30s %s\n",$3,$4}' file.tsv
+lam -f30 <(cut -f3 file.tsv) -s\  <(cut -f4 file.tsv)
+cut -f3,4 file.tsv|while IFS=$'\t' read -r x y;do printf '%-30s %s\n' "$x" "$y";done
+
+[[ $1 = */ ]]
+[ "${1%/}" != "$1" ]
+  POSIX
+
+jot -r 64 1 9|rs 8
+  -r generates random numbers
+  jot is named after the iota function in APL and rs is named after the reshape function in APL
+shuf -i1-9 -n64 -r|paste -sd"$(printf %7s)\n" -
+  -r allows repetitions like jot by default
+
+sox /tmp/*.mp3 -t wavpcm -|lame -V2 - concatenated.mp3
+ffmpeg -safe 0 -f concat -i <(printf "file '%s'\n" /tmp/*.mp3) -aq 2 concatenated.mp3
+  without `-safe 0` new versions of ffmpeg exit with an error when the path of some input file is absolute
+  if the path of some input file is relative, the command exits with an error like `Impossible to open '/dev/fd/relative/path/to/file.mp4'`
+
+tail -n100 file|sponge file
+{ tail -n100 file;perl -e'truncate STDOUT,tell STDOUT'; } 1<>file
+
+#print the first floored half of the lines of a file assuming that the file is two lines long or longer
+sed $(($(wc -l<file)/2))q file
+awk '{a[NR]=$0}END{for(i=1;i<=NR/2;i++)print a[i]}' file
+awk 'NR==FNR{n=NR;next}FNR<=n/2' file{,}
+mapfile -t a<file;printf %s\\n "${a[@]:0:${#a[@]}/2}"
+  bash
+  -t removes trailing newlines
+
+awk '/pattern/&&!x{gsub(/aa/,"bb");x=1}1'
+gsed '/pattern/!b;s/aa/bb/g;:1;n;b1'
+  /pattern/!b branches to the end of the script on lines that do not match the pattern
+  :1;n;b1 forms a loop that reads and prints each line until the end of the file
+sed -e'/pattern/!b' -e's/aa/bb/g;:1' -e'n;b1'
+
+gwc -L
+awk '{if(length>x)x=length}END{print x}' x=0
+  x=0 is only needed when the input only contains empty lines
+awk '{print length}'|sort -rn|head -n1
+jq -R length|jq -s max
+
+seq 100|awk 'NR%3==0{$0="Fizz"}NR%5==0{$0="Buzz"}NR%15==0{$0="FizzBuzz"}1'
+seq 100|awk '$0=NR%15?NR%5?NR%3?$0:"Fizz":"Buzz":"FizzBuzz"'
+seq 100|gsed '0~3s/.*/Fizz/;0~5s/[0-9]*$/Buzz/'
+
+awk '/pattern/{print NR;exit}'
+sed -n '/pattern/{=;q;}'
+grep -nm1 pattern|cut -d: -f1
+
+printf %b "${x//\%/\\x}"
+  ${x//%/\\x} would add \x to the end of $x in zsh but not in bash
+  the // parameter substitution and %b are not in POSIX
+perl -MURI::Escape -e'print uri_unescape($ARGV[0])' "$x"
+ruby -rcgi -e'print CGI.unescape ARGV[0]' "$x"
+gawk -iord -n '{printf RT?$0 chr("0x"substr(RT,2)):$0}' RS=%..<<<"$x"
+  -iord includes ord.awk which contains the chr function
+  -n is --non-decimal-data
+  this does not work with multibyte characters
+
+#percent-encode all characters
+xxd -p|tr -d \\n|sed 's/../%&/g'
+hexdump -ve '"%02x"'|sed 's/../%&/g'
+  -v disables printing an asterisk in place of repeated lines
+
+#percent-encode all characters except ASCII alphanumeric characters or some ASCII special characters
+jq -sRr @uri
+  -sR (`--slurp --raw-input`) reads the input into a single string
+  replace -sRr with -Rr to not replace linefeeds with %0A
+ruby -rcgi -pe'$_=CGI.escape$_'
+  add -l to not replace linefeeds with %0A
+perl -MURI::Escape -pe'$_=uri_escape$_'
+  add -l to not replace linefeeds with %0A
+(LC_ALL=C;while IFS= read -rn1 -d '' c;do if [[ $c = [[:alnum:]] ]];then printf %s "$c";else printf %%%02x "'$c";fi;done)
+  bash
+  without IFS= this would replace characters in IFS with %00
+  without `-d ''` this would skip null bytes and linefeeds
+  without LC_ALL=C this would replace multibyte characters with their code point preceded by a percent sign in a UTF-8 locale
+  without LC_ALL=C this would not escape non-ASCII characters that match [[:alnum:]] in a UTF-8 locale
+(LC_ALL=C;x=$(cat);n=${#x};for ((i=0;i<n;i++));do c=${x:$i:1};case $c in [[:alnum:]])printf %s "$c";;*)printf %%%02X "'$c";esac;done)
+  at least bash and zsh
+  ${x:i:1} results in an error in zsh but ${x:$i:1} does not
+
+sed G
+awk 1 ORS=\\n\\n
+awk '1;{print""}'
+paste -d\\n - /dev/null
+
+wget -P$dir $url
+  -P (--directory-prefix) changes the target directory
+  this creates the target directory if it does not exist including parent directories that do not exist
+(mkdir -p $dir;cd $dir;wget $url)
+
+sort -rn|sed 1q
+awk 'NR==1||$0>x{x=$0}END{print x}'
+  NR==1|| can be removed if the input does not contain only nonpositive numbers
+jq -s max
+
+printf %X\\n 123
+bc<<<'obase=16;123'
+
+echo $((0xff))
+echo $((16#ff))
+printf %i\\n 0xff
+bc<<<'ibase=16;FF'
+  FF has to be in uppercase
+
+awk NR%4
+sed 'n;n;n;d'
+gsed 0~4d
+
+awk '/pattern/&&NR>1{print x}{x=$0}'
+sed -n '/pattern/{x;1!p;x;};h'
+  1!p can be replaced with p if the pattern does not appear on the first line
+  the second x can be removed if the pattern does not appear on consecutive lines
+
+awk 'length<80'
+grep -v '.\{80\}'
+sed '/.\{80\}/d'
+
+awk NR%7==3
+gsed 3~7\!d
+sed -n '3,${p;n;n;n;n;n;n;}'
+
+awk -F\; NF==3
+grep '^[^;]*;[^;]*;[^;]*$'
+
+sort|uniq -c|sort -n|sed 's/ *[^ ]* //'
+  -n is only needed if some line appears ten million or more times
+  this can be much faster in the C locale than in a UTF-8 locale
+gawk '{++a[$0]}END{PROCINFO["sorted_in"]="@val_num_asc";for(i in a)print i}'
+
+gtouch -d@1234567890 file
+touch -t$(date -r 1234567890 +%Y%m%d%H%M.%S) file
+  BSD
+
+shopt -s extglob globstar;printf %s\\n !(dir)/**
+  bash
+find . -mindepth 2|grep -v ^dir/
+  this includes files whose name starts with a period
+find . -mindepth 2 ! -path dir/\*
+  this includes files whose name starts with a period
+
+ffmpeg -i stereo.wav -ac 1 mono.wav
+sox stereo.wav -c 1 mono.wav
+
+ffmpeg -i stereo.wav -map_channel 0.0.0 left.wav -map_channel 0.0.1 right.wav
+sox stereo.wav left.wav remix 1;sox input.wav right.wav remix 2
+
+printf %s\\n *(/)
+  zsh
+printf %s\\n */
+  this includes symlinks to directories
+ls -d */
+  this includes symlinks to directories and can result in an argument list too long error
+find . ! -name . -prune -type d
+  this includes files whose name starts with a period
+
+awk '{$1=$1}1'
+  this was faster than the other options in my testing
+gsed 's/^[ \t]*//;s/[ \t]*$//;s/[ \t]\+/ /g'
+LC_ALL=C sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/[[:space:]]\{1,\}/ /g'
+  POSIX
+  [[:space:]] matches only space and tab in the C locale but it matches characters like ideographic space in UTF-8 locales at least in OS X
+tr \\t \ |sed 's/^ *//;s/ *$//;s/  */ /g'
+tr -s ' \t' ' '|sed 's/^ //;s/ $//'
+
+#print permutations of the characters a, b, and c
+ruby -e'puts"abc".chars.permutation.map(&:join)'
+perm(){ local i;if [[ -z $1 ]];then echo "$2";return;fi;for ((i=0;i<${#1};i++));do perm "${1:0:i}${1:$i+1}" "$2${1:$i:1}";done; };perm abc
+  ${1:i+1} and ${1:i:1} would result in an error in zsh because there is no dollar sign before i
+
+#print 2-tuples (2-permutations with repetition) of the characters a, b, and c
+ruby -e'puts"abc".chars.repeated_permutation(2).map(&:join)'
+printf %s\\n {a..c}{a..c}
+jq -nr '"abc"/""|combinations(2)|join("")'
+  -n is --null-input
+
+#print 2-combinations of the characters a, b, and c
+ruby -e'puts"abc".chars.combination(2).map(&:join)'
+python -c'import itertools;print("\n".join(["".join(x)for x in itertools.combinations("abc",2)]))'
+
+ls -t|sed 1,3d|xargs rm
+rm *(om[4,-1])
+  zsh
+  om orders files by modification time
+
+comm -12 <(ls dir1) <(ls dir2)|sed s,^,dir1/,|xargs rm
+printf %s\\n dir1/*|awk -F/ 'FILENAME==ARGV[1]{a[$0];next}$NF in a' <(ls dir2) -|xargs rm
+
+head -c1048576 /dev/zero>file
+dd if=/dev/zero bs=1048576 count=1 of=file
+truncate -s 1M file
+mkfile 1m file
+  BSD
+printf %.0s\\0 {1..1048576}>file
+  this is slow
+
+awk -F\; '$2~/^[0-9]+$/'
+egrep '^[^;]*;[0-9]+(;|$)'
+
+pee()(in=$(cat);for x;do eval "$x"<<<"$in";done);pee head 'wc -l'
+  this assumes that the input does not contain null bytes in shells other than zsh
+pee head 'wc -l'
+  this can print the output of either command first
+  pee is from moreutils
+tee >(sponge /dev/stdout|head) >(wc)>/dev/null|cat
+  without `sponge /dev/stdout` this would give the wrong result when the input is long enough that the head command exits before it reads the whole input
+  without `|cat` this would get blocked when this is not followed by other commands in a pipeline
+tee >(wc) >(sponge /dev/stdout|head)>/dev/null|cat
+  without `sponge /dev/stdout` this would give the wrong result when the input is long enough that the head command exits before it reads the whole input
+  without `|cat` this would get blocked when this is not followed by other commands in a pipeline
+
+sed $'s/aa/&\\\n/g'
+gsed 's/aa/&\n/g'
+(x=$(cat);printf %s\\n "${x//aa/$'aa\n'}")
+
+awk 'NR==FNR{a[NR]=$0;next}{for(i in a)print$0,a[i]}' file2 file1
+while IFS= read -r x;do while IFS= read -r y;do printf %s\\n "$x $y";done<file2;done<file1
+mapfile -t a<file1;mapfile -t b<file2;for x in "${a[@]}";do for y in "${b[@]}";do echo "$x $y";done;done
+  bash
+parallel -k echo :::: file1 file2
+
+comm <(sort file1) <(sort file2)
+sort file1|{ sort file2|comm /dev/fd/3 -; } 3<&0
+
+printf 'filename1 aa\nfilename2 bb\n'|while read x y;do echo "$y">>$x.txt;done
+printf 'filename1 aa\nfilename2 bb\n'|awk '{print$2>>($1".txt")}'
+  the parentheses are needed in nawk but not in gawk or mawk
+
+sed $'/pattern/a\\\ntext to insert\n'
+gsed '/pattern/atext to insert'
+awk '1;/pattern/{print"text to insert"}'
+
+(echo;cat)
+gsed '1i\\'
+  OS X's sed does not support inserting an empty line with i or a
+sed $'1s/^/\\\n/'
+awk 'NR==1{print""}1'
+
+grep -l pattern *
+awk '/pattern/{print FILENAME;nextfile}' *
+gsed -n /pattern/F *|awk '!a[$0]++'
+  F prints the filename
+
+rm **/*.@(pls,m3u,m3u8)
+find . -name \( \*.pls -o -name \*.m3u -o name \*.m3u8 \) -delete
+find .|egrep '\.(pls|m3u|m3u8)$'|gxargs -d\\n rm
+
+printf %s\\n "$x"
+print -r -- $x
+  zsh
+  -r disables interpreting escape sequences
+  zsh does not perform word splitting or filename expansion after parameter expansion with the default settings, so double quotes are not needed
+
+mv $(ls -dt dir/*|head -n2) .
+mv dir/*(om[1,2]) .
+  zsh
+
+if [ $# -ge 1 ];then printf %s\\n "$@";else cat;fi
+printf %s\\n "${@-$(cat)}"
+  this reads the whole STDIN to memory when there are no arguments
+  this prints an empty line when there are no arguments and STDIN is empty
+
+sed -n '1p;$p'
+awk 'NR==1;END{print}'
+
+#print the first and last five lines of the input assuming that the total number of lines of the input is ten or more
+(gsed -u 5q;tail -n5)
+  -u is unbuffered
+(head -n5;tail -n5)
+  this does not work in a pipeline when the last lines are part of the block consumed by head
+gsed ':1;5p;$q;N;6,$D;b1'
+awk 'NR<=5;{a[NR%5]=$0}END{for(i=NR-4;i<=NR;i++)print a[i%5]}'
+  add if(i>5) before the print statement to not print some lines two times when the input is from 1 to 9 lines long and to not print empty lines when the input is from 1 to 4 lines long
+(n=1;while IFS= read -r l&&[ $n -le 5 ];do printf %s\\n "$l";n=$((n+1));done;tail -n5)
+(set -f;IFS=$'\n';set -- $(cat);printf %s\\n ${@:1:5} ${@:$# -4})
+  this removes empty lines
+  the space before the minus sign is needed in zsh but not in bash
+  the colon parameter expansion is not in POSIX
+(mapfile -t a;printf %s\\n "${a[@]:0:5}" "${a[@]:${#a}-6}")
+  bash
+(x=$(cat);sed -n 1,5p\;$(($(wc -l<<<"$x")-4)),\$p<<<"$x")
+  the command substitution removes empty lines from the end of the input
+
+while IFS= read -r l;do [[ $l = *"$string" ]]&&printf %s\\n "$l";done
+  bash and zsh
+  the double quotes disable pattern matching in bash but they are not needed in zsh
+while IFS= read -r l;do case $l in *"$string")printf %s\\n "$l";;esac;done
+  POSIX
+  the double quotes disable pattern matching in bash but they are not needed in zsh
+grep -- "$(sed 's/[[^.\$*]/\\&/g'<<<"$string")\$"
+ggrep -P "\Q$string\E\$"
+  this assumes that $string does not contain \E
+x="$string" awk 'BEGIN{x=ENVIRON["x"];n=length(x)}length>=n&&substr($0,length-n+1,n)==x'
+jq --arg x "$string" -Rr 'select(endswith($x))'
+
+printf %02d\\n {0..99}
+printf %s\\n {00..99}
+  at least zsh and bash 4.0 and later
+seq -f %02.f 0 99
+seq -w 0 99
+  -w makes numbers the same width by padding them with zeros
+jot -w %02d 100 0
+  100 is the number of repetitions and 0 is the first number to print
+
+x="$x" awk '{print ENVIRON["x"]$0}'
+awk '{print x$0}' "x=$x"
+  this assumes that $x does not contain backslashes
+sed "s/^/$(sed 's/[/\&]/\\&/g'<<<"$x")/"
+while IFS= read -r l;do printf %s\\n "$x$l";done
+  this is slow
+jq --arg x "$x" -Rr '$x+.'
+
+find . -iname \*.flac|while IFS= read -r l;do ffmpeg -i "$l" -aq 2 "${l%.*}.mp3";done
+find . -iname \*.flac|parallel ffmpeg -i {} -aq 2 {.}.mp3
+
+echo ~-2
+dirs -2
+echo "${DIRSTACK[-2]}"
+  bash
+
+head -c8 /dev/random|xxd -p
+hexdump -n8 -e'/1 "%02x"' /dev/random
+for i in {1..8};do printf %02x $((RANDOM%256));done
+jot -w %02x -s '' -r 8 1 256
+  -w changes the format, -s changes the separator, and -r generates random numbers
+openssl rand -hex 8
+od -N8 -tx1 -An /dev/random|tr -d ' '
+  od is in POSIX but xxd and hexdump are not
+  in GNU od there is one space after the address space, one space between bytes, and no spaces at the end of lines that are shorter than the width of the default output
+  in OS X's od there are multiple spaces after the address space, two spaces between bytes, and spaces at the end of lines that are shorter than the width of the default output
+  in OS X's od options placed after an argument for an input file are treated as input files, so `od /dev/random -N8 -tx1 -An` would read from /dev/random indefinitely
+
+base64 /dev/random|head -c8
+openssl rand -base64 6
+
+mapfile -t a<file
+  bash
+  -t removes trailing linefeeds
+IFS=$'\n' read -rd '' -a a<file
+  bash
+  replace -a with -A in zsh
+set -f;IFS=$'\n' a=($(<file))
+  at least bash and zsh
+a=();while IFS= read -r l;do a+=("$l");done<file
+  at least bash and zsh
+zmodload zsh/mapfile;a=(${(f)mapfile[file]})
+  zsh
+
+#print each line in file1 followed by the line with the same line number in file2, assuming that the files have the same number of lines
+paste -d\\n file1 file2
+gsed Rfile2 file1
+  R reads a single line from a file
+while IFS= read -ru3 x&&IFS= read -ru4 y;do printf %s\\n "$x" "$y";done 3<file1 4<file2
+awk '1;{getline<"file2"}1' file1
+awk 'NR==FNR{a[NR]=$0;next}{print a[FNR]}1' file1 file2
+
+printf %8s|tr \  \*
+printf \*%.0s {1..8}
+head -c8 /dev/zero|tr \\0 \*
+yes \*|head -n8|tr -d \\n
+
+sed /pattern/G
+awk '1;/pattern/{print""}'
+
+awk '1;/pattern/&&!seen{print"";seen=1}'
+gsed '/pattern/{G;:1;n;b1}'
+  :1;n;b1 forms a loop that skips to the end of the input so that the remaining lines are printed implicitly
+
+#print the number that is the closest to 50 on a list of numbers
+awk '{d=$0-50;if(d<0)d=-d;if(NR==1||d<min){min=d;minvalue=$0}}END{print minvalue}'
+awk '{print$0-50,$0}'|sed s,^-,,|sort -n|head -n1|cut -d\  -f2
+jq -s 'min_by(.-50*.-50)'
+  jq does not have a function for an absolute value so squaring numbers is a short way to make all numbers positive
+
+sort|uniq -c|sort|awk '{print$1}'|uniq -c|sort -rn
+awk '{++a[$0]}END{for(i in a)++b[a[i]];for(i in b)print b[i],i}'|sort -rn
+
+printf %s {a..z..7}
+  bash but not zsh
+set {a..z};for((n=1;n<=$#;n+=7));do printf ${!n};done
+  bash
+a={a..z};for ((n=1;n<=$#;n+=7)){printf ${(P)n}}
+  zsh
+
+printf %s abc{,,}
+printf abc%.0s {1..3}
+yes abc|head -n3|tr -d \\n
+
+paste -sd\\0 -
+  POSIX
+gpaste -sd ''
+  GNU paste allows using `-d ''` instead of -d\\0 and omitting the dash for STDIN
+tr -d \\n|awk 1
+
+join -j 1 -o 1.1,1.2,2.2 <(sort -k1,1 file1) <(sort -k1,1 file2)
+  if file2 has multiple lines whose first field has the same value, this prints all lines
+awk 'NR==FNR{a[$1]=$2;next}$1 in a{print$1,$2,a[$1]}' file2 file1
+  if file2 has multiple lines whose first field has the same value, this only prints the last line
+gawk 'NR==FNR{a[$1][NR]=$2;next}$1 in a{for(i in a[$1])print$1,$2,a[$1][i]}' file2 file1
+  if file2 has multiple lines whose first field has the same value, this prints all lines
+  nawk and mawk do not support arrays of arrays
+
+awk 'NR==FNR{a[$0];next}FNR in a' line-numbers-to-print -
+sed -n "$(sed s/\$/p/ line-numbers-to-print)"
+
+sort|uniq -c|awk '$1==5'|sed 's/ *[^ ]* //'
+awk '++a[$0]>=5'|sort|uniq -u
+awk '{++a[$0]}END{for(i in a)if(a[i]==5)print i}'
+jq -R .|jq -rs 'group_by(.)[]|select(length==5)[0]'
+
+sed '/aa/{/bb/!d;}'
+awk '!/aa/||/bb/'
+
+paste -d\  - - -
+paste -sd'  \n' -
+sed '$!N;$!N;y/\n/ /'
+sed 'N;N;y/\n/ /'
+  if the input contains four lines, this exits before printing a second output line in GNU sed but not in OS X's sed
+  if the input contains five lines, this does not replace the linefeed at the end of the fourth input line with a space in GNU sed and exits before printing a second output line in OS X's sed
+  OS X's sed does not print the pattern space before exiting when N is used on the last line but GNU sed does
+rs -C' ' 0 3|sed 's/ $//'
+  -C changes the output column separator
+  0 uses an automatically determined number of rows
+  a column separator is printed at the end of each line
+  if the input contains spaces, add -c\\n to disable using space as an input column separator
+gxargs -d\\n -n3
+  this runs one echo process for each output line
+  some arguments can be treated as options on systems where /bin/echo supports options, and /bin/echo also interprets escape sequences on some systems
+  this results in an error if the arguments do not fit on a single command line
+awk 'ORS=NR%3?" ":"\n"'
+  this prints a space and no linefeed at the end of the output if the number of lines is not a multiple of three
+awk '{x=$0;getline;y=$0;getline;print x,y,$0}'
+  this assumes that the number of lines is a multiple of three
+  the form of getline without an argument changes $0
+awk '{getline x;getline y;print$0,x,y}'
+  this assumes that the number of lines is a multiple of three
+  the form of getline with an argument does not change $0
+while IFS= read -r x;do IFS= read -r y;IFS= read -r z;printf %s\\n "$x $y $z";done
+  this assumes that the number of lines is a multiple of three
+
+#transpose a matrix where columns are delimited by a single space
+rs -c' ' -C' ' -T|sed 's/ $//'
+  -c changes the input column separator and -C changes the output column separator
+  -T transposes a matrix
+  an output column separator is printed at the end of each line when -C is specified
+  do not use -t instead of -T because it uses automatically calculated numbers of rows and columns that are usually not correct
+awk '{for(i=1;i<=NF;i++){a[NR,i]=$i}}NF>width{width=NF}END{for(j=1;j<=width;j++){x=a[1,j];for(i=2;i<=NR;i++){x=x" "a[i,j]}print x}}'
+  you can use an array of arrays instead of a two-dimensional array in gawk but not in nawk or mawk
+ruby -e'puts readlines.map(&:split).transpose.map{|x|x*" "}'
+jq -R .|jq -sr 'map(./" ")|transpose|map(join(" "))[]'
+
+gls -X1
+  -X sorts files by filename extension
+ls|awk -F. '{print$NF,$0}'|sort|cut -d\  -f2-
+  this assumes that all filenames have a filename extension
+ls|jq -R .|jq -sr 'sort_by([(./".")[-1],.])[]'
+  this assumes that all filenames have a filename extension
+
+tr -dc ,\\n|jq -R length
+awk -F, '{print NF?NF-1:0}'
+  NF?NF-1:0 can be replaced with NF-1 if the input does not contain empty lines
+while read l;do x=${l//[^,]};echo ${#x};done
+while {read l} {echo ${#${l//[^,]}}}
+  zsh
+
+awk '/^start$/,/^end$/'
+sed '/^start$/,/^end$/!d'
+pcregrep -M '(?s)^start$.*?^end$'
+  -M is multiline and (?s) makes period match a newline
+
+find . ! -newermt '2015-01-01 00:00'
+  at least GNU and OS X
+touch -t 201501010000 /tmp/a;find . ! -newer /tmp/a
+  POSIX
+mdfind 'kMDItemFSContentChangeDate<$time.iso(2015-01-01T00:00)' -onlyin .
+  OS X
+
+find . -newermt '2014-12-31 23:59:59' ! -newermt '2015-01-01 23:59:59'
+gfind -printf '%TF %p\n'|grep ^2015-01-01|cut -d\  -f2-
+
+a=("${(@u)a}")
+  zsh
+declare -A h;for x in "${a[@]}";do h[$x]=;done;a=("${!h[@]}")
+  bash
+IFS=$'\n' read -rd '' -a a< <(printf %s\\n "${a[@]}"|awk '!a[$0]++')
+  bash
+  this assumes that the values do not contain linefeeds
+set -f;IFS=$'\n' a=($(printf %s\\n "${a[@]}"|awk '!a[$0]++'))
+  bash
+  this assumes that the values do not contain linefeeds
+
+#delete the last line unless the input only contains a single line
+sed '1!{$d;}'
+sed '1n;$d'
+
+gawk 'ENDFILE{print FNR}' *
+  nawk and mawk do not have ENDFILE
+  this counts the part of a file after the last linefeed as an additional line when a file does not end with a linefeed
+  if one of the files specifed as an argument is a directory, gawk does not exit when it attempts to read it even though mawk does
+for f in *;do wc -l<"$f";done
+  add `sed 's/ *//'` to remove spaces from the start of lines when using OS X's wc
+wc -l *|sed '1n;$d'|awk '{print$1}'
+  `awk '{print$1}'` can be replaced with `cut -d\  -f1` when using GNU wc
+
+LC_ALL=C tr -dc a-z</dev/random|head -c10
+  LC_ALL=C is not needed with GNU tr which does not support Unicode
+jot -c -s '' -r 10 a z
+  -c is the same as `-w %c`, -s changes the separator, and -r generates random data
+
+cat -te
+  at least GNU and BSDs
+  -t is like -v but it also replaces tabs with ^I
+  -e is like -v but it also includes a dollar sign at the end of each line
+gcat -A
+  -A is equivalent to -te
+sed -n l
+  this also folds long lines and uses octal escape sequences instead of C- and M- prefixes
+  this escapes multibyte characters in a UTF-8 locale in GNU sed but not in OS X's sed
+
+cmp -n100 file1 file2;echo $?
+[[ $(head -c100 file1) = "$(head -c100 file2)" ]];echo $?
+  this assumes that the first 100 bytes of the files do not contain null bytes in shells other than zsh
+  `head -c` is not in POSIX even though `tail -c` is
+  `head -c` applies to bytes instead of multibyte characters even in a UTF-8 locale in at least coreutils and OS X
+
+srm -s file
+  -s is single pass
+shred -n1 -u file
+  -n1 is single pass and -u unlinks the file
+
+ls -A|read
+  add -r if the directory contains only one file and the name of the file consists of a single backslash
+find . -prune -empty|read
+a=(*(DN));[ $#a -ne 0 ]
+  zsh
+  D enables glob_dots and N enables null_glob
+shopt -s dotglob nullglob;a=(*);[ "${#a[@]}" -ne 0 ]
+  bash
+shopt -s dotglob nullglob;[ -n "$(printf %s *)" ]
+  bash
+  replace `printf %s` with for example `printf %sa` if the directory contains only files whose name consists of linefeeds
+
+awk 'NR==1||/pattern/'
+sed -n '1{p;n;};/pattern/p'
+  {p;n;} can be replaced with p if the pattern does not occur on the first line
+
+find . -name \*.mp3 -exec mp3info -p '%S %f\n' {} +|awk '$1>=180&&$1<=195'|cut -d\  -f2-
+for f in **/*.mp3;do ffprobe -v 0 -i "$f" -show_streams|awk -F= '$1=="duration"&&$2>=180&&$2<=195'|read&&echo "$f";done
+  `-v 0` disables the default STDERR output
+mdfind 'kMDItemFSName=*.mp3&&kMDItemDurationSeconds>=180&&kMDItemDurationSeconds<=195' -onlyin .
+  OS X
+
+date +%s
+  %s is not in POSIX
+printf '%(%s)T\n'
+  bash 4.3 and later
+printf '%(%s)T\n' -1
+  bash 4.2 and later
+awk 'BEGIN{print systime()}'
+   gawk and mawk 1.3.4 have systime but nawk or older versions of mawk do not
+
+awk -F: '{print$2,$4}'
+cut -d: -f2,4|tr : ' '
+while IFS=: read -r c1 c2 c3 c4 rest;do printf %s\\n "$c2 $c4";done
+while IFS=: read -r -a a;do printf %s\\n "${a[1]} ${a[3]}";done
+  bash
+while {IFS=: read -r -A a} {print -r -- $a[2] $a[4]}
+  zsh
+(set -f;IFS=:;while read -r l;do set -- $l;printf %s\\n "$2 $4";done)
+  this does not work in zsh without `setopt shwordsplit`
+
+o=1;for x;do if [ "$x" = aa ];then o=0;break;fi;done;echo $o
+[[ " $* " = *' aa '* ]];echo $?
+  this assumes that the arguments do not contain spaces and that IFS has not been changed
+printf %s\\n "$@"|grep -qx aa;echo $?
+  this assumes that the arguments do not contain linefeeds
+(($@[(i)aa]<=$#));echo $?
+  zsh
+  $@[(i)aa] expands to the index of the first argument whose value is aa if the value of one the arguments is aa or to one plus the number of arguments otherwise
+(($@[(I)aa]>0));echo $?
+  zsh
+  $@[(I)aa] expands to the index of the last argument whose value is aa if the value of one of the arguments is aa or to zero otherwise
+[[ $@[(r)aa] ]];echo $?
+  zsh
+  $@[(r)aa] expands to aa if the value of one of the arguments is aa or to empty otherwise
+
+ggrep -Pv 'aa(?!.*bb)'
+awk '/aa/&&!/aa.*bb/{next}1'
+sed -e'/aa.*bb/b' -e/aa/d
+
+(x=$(cat);paste <(sed \$d<<<"$x") <(sed 1d<<<"$x"))
+awk '{x=$0;while(getline){print x"\t"$0;x=$0}}'
+  the form of getline without an argument changes $0
+awk '{x=$0;while(getline y){print x"\t"y;x=y}}'
+  the form of getline with an argument does not change $0
+
+#print the smallest difference between two numbers on a list of numbers
+sort -n|awk 'NR==2{min=$0-prev}NR>2{x=$0-prev;if(x<min)min=x}{prev=$0}END{print min}'
+(x=$(sort -n);paste <(sed \$d<<<"$x") <(sed 1d<<<"$x")|awk '{print$2-$1}'|jq -s min)
+sort -n|awk '{x=$0;while(getline){print$0-x;x=$0}}'|jq -s min
+
+awk '{a[$1]+=$2}END{for(i in a)print i,a[i]}'
+(declare -A a;while read x y z;do((a[$x]+=y));done;for i in "${!a[@]}";do echo "$i ${a[$i]}";done)
+  bash
+  this only works with integers
+
+gstat -c'%s %n' *
+stat -f'%z %N' *
+  BSD
+gfind * -prune -printf '%s %p\n'
+  `* -prune` can be replaced with `-mindepth 1 -maxdepth 1` but that includes files whose name starts with a period
+
+#list files in dir2 whose size in bytes is larger than the size in bytes of a file with the same basename in dir1
+awk 'NR==FNR{a[$2]=$1;next}$2 in a&&a[$2]<$1{print"dir2/"$2}' <(gfind dir1 -mindepth 1 -maxdepth 1 -printf '%s %f\n') <(gfind dir2 -mindepth 1 -maxdepth 1 -printf '%s %f\n')
+for f in dir2/*;do (($(gstat -c%s dir1/${f#*/})<$(gstat -c%s $f)))&&echo $f;done
+  this runs one stat command for each file
+
+sed '$!s/$/, /'|paste -sd\\0 -
+(x=$(cat);printf %s\\n "${x//$'\n'/, }")
+sed -e :1 -e '$!N;s/\n/, /;t1'
+
+f1=$(sort -u file1);f2=$(sort -u file2);for x in 23 13 12;do comm -$x <(printf %s\\n "$f1") <(printf %s\\n "$f2")|wc -l;done|sed 's/^ *//'|paste -sd\  -
+awk FILENAME==ARGV[1]{a[$0];next}{b[$0];if($0 in a&&$0 in b)c[$0]}END{print length(a)-length(c),length(b)-length(c),length(c)}' file1 file2
+
+xxd -p|tr -d \\n
+od -An -v -tx1|tr -d ' \n'
+  -An disables printing the address base at the start of each line
+  -v disables printing an asterisk in place of repeated lines
+  -tx1 sets the output type to a single hexadecimal byte
+(export LC_ALL=C;grep -o .|while IFS= read -r c;do printf %02x "'$c";done)
+(LC_ALL=C;while IFS= read -r -d '' -n1 c;do printf %02x "'$c";done)
+  bash
+  without `-d ''` this would skip linefeeds and null bytes
+  without IFS= this would print 00 in place of sequences of characters in IFS
+  replace -n1 with `-k1 -u0` in zsh
+perl -pe'$_=unpack("H*",$_)'
+gawk -iord '{printf"%02x",ord(RT)}' RS='.{1}'
+  this does not work with multibyte characters
+
+xxd -r -p
+printf $(sed 's/../\\x&/g'|tr -d \\n)
+perl -pe'chomp;$_=pack("H*",$_)'
+
+echo $((2#100101))
+bc<<<'ibase=2;100101'
+
+bc<<<'obase=2;37'
+x=;for ((n=37;n!=0;n/=2));do x=$((n%2))$x;done;echo $x
+printf %s\\n {0,1}{0,1}{0,1}{0,1}{0,1}{0,1}{0,1}|sed -n 38p
+gawk 'BEGIN{n=37;if(n==0){print 0;exit};for(;n!=0;n=rshift(n,1))out=(and(n,1)?1:0)out;while ((length(out)%8)!=0)out="0"out;print out}'
+
+printf %x\\n $((0x89+0xab))
+bc<<<'obase=16;ibase=16;89+AB'
+  obase has to be before ibase and AB has to be in uppercase
+
+[ -n "${x##*[^0-9]*}" ];echo $?
+  POSIX
+case $x in ''|*[^0-9]*)echo 1;;*)echo 0;;esac
+  POSIX
+[ -n "$x" ]&&[ -z "${x//[0-9]}" ];echo $?
+  the // parameter expansion is not in POSIX
+[[ $x =~ ^[0-9]+$ ]];echo $?
+  at least bash and zsh
+[[ $x = +([0-9]) ]];echo $?
+  bash
+  `shopt -s extglob` is not needed because extended globbing is always enabled on the right side of = and !=
+grep -Eq '^[0-9]+$'<<<"$x";echo $?
+  this assumes that $x does not contain linefeeds
+
+:>file
+>file
+  bash but not zsh
+printf ''>file
+
+cat>file
+>file
+  zsh but not bash
+
+cp -R *(/) /tmp
+  zsh
+  / is a qualifier for directories
+cp -R */ /tmp
+  GNU but not OS X
+  this copies the files inside each directory instead of the directories themselves in OS X's cp
+  this includes symlinks to directories
+cp -R "$(printf %s\\n */|tr -d /)" /tmp
+  this includes symlinks to directories
+
+fold -w70
+awk '{while(length>w){print substr($0,1,w);$0=substr($0,w+1)}}1' w=70
+
+echo $COLUMNS
+  this does not work in a non-interactive shell in bash but does in zsh
+tput cols
+  this works in a non-interactive shell
+
+for ((x=0x3040;x<=0x309f;x++));do printf %x\\n $x;done
+printf %x\\n $(seq $((0x3040)) $((0x309f)))
+x=0x3040;jot -w %x $((0x309f-x+1)) $x
+  the second last argument is the number of repetitions and the last argument is the first value to print
+
+rename 's/^([0-9]+)/sprintf("%04d",$1)/e' *
+for f in [0-9]*;do mv "$f" "$(printf %04d "${f%%[^0-9]*}")${f#[0-9]*}";done
+
+lsof -t /tmp/file|xargs kill
+  -t (terse) prints only PIDs
+fuser -k /tmp/file
+
+cp -Rn dir/* /tmp
+rsync -r --ignore-existing dir/ /tmp
+
+paste - - -|awk -F\\t '{print$3,$2,$1}'
+  this assumes that the number of lines is a multiple of three and that the lines do not contain tabs
+sed 'N;N;s/\(.*\)\n\(.*\)\n\(.*\)/\3 \2 \1/'
+  this assumes that the number of lines is a multiple of three
+awk '{getline x;getline y;print y,x,$0}'
+  this assumes that the number of lines is a multiple of three
+
+identify -format '%w %h %f\n' *.jpg
+mdls -rnkMDItem{FSName,PixelHeight,PixelWidth} *.jpg|tr \\0 \\n|paste - - -|awk -F\\t '{print$3,$2,$1}'
+  OS X
+  mdls lists the attributes in alphabetical order
+
+#replace characters that are not printable ASCII characters with \u escape sequences, assuming that the input does not contain U+10000 or characters above it
+(shopt -s globasciiranges;LC_ALL=en_US.UTF-8;while IFS= read -r -n1 -d '' c;do if [[ $c = [\ -~] ]];then printf %s "$c";else printf '\\u%04x' "'$c";fi;done)
+  bash
+  without `-d ''` this would skip linefeeds
+  `shopt -s globasciiranges` is not needed in OS X which uses code point collation order in UTF-8 locales
+  this does not double backslashes
+ruby -pe'$_.gsub!(/[^ -~]/){"\\u%04x"%$&.ord}'
+  this does not double backslashes
+jq -aR .|sed 's/^.//;s/.$//;s/\\"/"/g'
+  -a uses \u escape sequences for non-ASCII characters
+  this doubles backslashes
+  this uses the \b, \t, \f, and \r escape sequences for ASCII control characters
+
+cat -s
+  this prints an empty line at the start if the input starts with empty lines or at the end if the input ends with empty lines
+cat -s|sed '1{/^$/d;};${/^$/d;}'
+  this does not print an empty line at the start or end if the input starts or ends with empty lines
+awk 1 RS= ORS=\\n\\n|sed \$d
+  this does not print an empty line at the start or end if the input starts or ends with empty lines
+awk '/./||x!="";{x=$0}'
+  this prints an empty line at the end if the input ends with empty lines but not at the start if the input starts with empty lines
+
+basename "$x"
+  this prints a forward slash when the value of $x is a forward slash
+  basename is in POSIX
+x=${x%/};printf %s\\n "${x##*/}"
+  this prints nothing when the value of $x is a forward slash
+  this gives the wrong result when $x ends with two or more forward slashes
+sed 's,/*$,,;s,.*/,,'<<<"$x"
+  this prints nothing when the value of $x is a forward slash
+printf %s\\n ${x:t}
+  zsh
+  t (tail) is a modifier for the basename
+  this prints nothing when the value of $x is a forward slash
+
+printf %.0f\\n $float
+bc<<<"scale=0;$float/1"
+
+#rename files so that characters that are not legal in filenames in Windows are replaced with an underscore
+rename 's/["*:<>?\\|]/_/g' *
+for f in *;do mv "$f" "${f//[\"*:<>?\\|]/_}";done
+  the backslash before the double quote is needed in both zsh and bash
+
+#print the first line of each paragraph
+awk '{print$1}' RS= FS=\\n
+awk '(NR==1||x=="")&&/./;{x=$0}'
+
+#sort lines within each paragraph
+awk '{print|c;close(c);print""}' RS= c=sort|sed \$d
+  without the close function this would sort the whole input together
+jq -Rsr '.[:-1]/"\n\n"|map(./"\n"|sort|join("\n"))|join("\n\n")'
+  this assumes that there is only one empty line between each paragraph and that the input does not start or end with an empty line
+
+#sort lines by the number of lines of the input whose second field the second field is
+gawk '{++a[$2];b[$2]=b[$2]$0"\n"}END{PROCINFO["sorted_in"]="@val_num_asc";for(i in a)printf"%s",b[i]}'
+awk '{++a[$2];b[$2][NR]=$0}END{for(i in a)for(j in b[i])print a[i],b[i][j]}'|sort -sn|cut -d\  -f2-
+  -k1,1 is not needed for the sort command because -n considers only the numeric part at the start of each line
+jq -R .|jq -sr 'group_by((./" ")[1])|sort_by(length)[][]'
+
+#download URLs on odd lines using target filenames on even lines
+paste - -|parallel -C\\t curl {1} -so {2}
+  -C sets a column separator
+parallel -N2 curl {1} -so {2}
+  -N2 takes two arguments at a time and makes replacement strings like {1} available
+
+<filenames.txt parallel -X find {} -size +100k
+  -X fills a command line with multiple arguments
+<filenames.txt gxargs -d\\n gstat -c'%s %n'|awk '$1>102400'|cut -d\  -f2-
+zmodload zsh/mapfile;a=(${(f)mapfile[filenames.txt]});printf %s\\n $a(Lk+100)
+  zsh
+
+awk '{x=$0;gsub(/aa/,"bb");print x,$0}'
+sed 'p;s/aa/bb/g'|paste -d\  - -
+sed 'h;s/aa/bb/g;x;G;s/\n/ /'
+
+<urls.txt parallel curl {} -o {#}-{/}
+  {#} is the sequence number of the job and {/} is the basename
+awk '{print NR,$0}' urls.txt|parallel -C\  curl {2} -o {1}-{2/}
+  -C changes the column separator and {2/} is the basename of the second argument
+sed = urls.txt|parallel -N2 curl {2} -o {1}-{2/}
+  -N2 takes two arguments at a time and makes replacement strings like {1} available
+
+sort|uniq -c|awk '$1<=2'|sed 's/^ *[^ ]* //'
+  this does not keep the lines in the original order
+awk '{++a[$0]}END{for(i in a)if(a[i]<=2)print i}'
+  this does not keep the lines in the original order
+awk '{++a[$0];b[NR]=$0}END{for(i in b)if(a[b[i]]<=2)print b[i]}'|awk '!a[$0]++'
+  this keeps the lines in the original order
+(x=$(cat);awk 'FILENAME==ARGV[1]{a[$0];next}!($0 in a)' <(awk '++a[$0]==3'<<<"$x") <(awk '!a[$0]++'<<<"$x"))
+  this keeps the lines in the original order
+jq -R .|jq -sr 'group_by(.)[]|select(length<=2)[0]'
+  this keeps the lines in the original order
+
+while IFS= read -r l;do [ -e "$l" ]&&printf %s\\n "$l";done
+gxargs -rd\\n ls -1d
+
+while IFS= read -r l;do [ -e "$l" ]||printf %s\\n "$l";done
+(x=$(cat);printf %s\\n "$x"|gxargs -rd\\n ls -d|awk 'NR==FNR{a[$0];next}!($0 in a)' <(printf %s\\n "$x") -)
+
+awk 'NR==FNR{a[$0];next}$3 in a' file1 file2
+  when file2 contains multiple lines with the same third field which is a chomped line of file1, this prints the lines in the order of the third fields in file2
+awk 'NR==FNR{a[$3]=a[$3]$0"\n";next}$0 in a&&!b[$0]++{printf"%s",a[$0]}' file2 file1
+  when file2 contains multiple lines with the same third field which is a chomped line of file1, this prints the lines in the order of the lines in file1
+  &&!b[$0]++ can be removed if file1 does not contain duplicate lines
+join -1 1 -2 3 -o 2.1,2.2,2.3 <(sort file1) <(sort -k3,3 file2)
+  this prints the lines sorted by the values of the third column
+  add more columns to 2.1,2.2,2.3 if file2 contains more columns
+  this assumes that file1 does not contain spaces or tabs
+
+ffmpeg -i file.mp3 cover.jpg
+  if the mp3 file contains multiple images, this only creates a file for the cover image
+eyeD3 --write-images . file.mp3
+  if the mp3 file contains multiple images, this creates files for all images
+
+grep -Ff file1 file2
+  this does not result in an error if the length of file1 is over ARG_MAX
+grep -F "$(<file1)" file2
+  this results in an error if the length of file1 is over ARG_MAX on systems where the length of a command line cannot exceed ARG_MAX
+awk 'NR==FNR{a[$0];next}{for(i in a){if(index($0,i)){print;break}}}' file1 file2
+jq --slurpfile a <(jq -R . file1) -Rr '. as$in|select($a|map(inside($in))|any)' file2
+
+[[ :$PATH: != *:/usr/local/bin:* ]]&&PATH=/usr/local/bin:$PATH
+case :$PATH: in *:/usr/local/bin:*):;;*)PATH=/usr/local/bin:$PATH;;esac
+  POSIX
+
+i=1;for f in *;do mv $f $(printf %04d $i)-$f;let i++;done
+  `let i++` makes the shell exit when `set -e` is enabled in bash but not in zsh
+rename 's/^/sprintf("%04d",++$::i)-/e' *
+  $::i makes $i global
+rename -N 0001 's/^/$N-/' *
+  in the implementation by Aristotle Pagaltzis, $N is set to the number of a file and -N changes the format of $N
+ls|awk '{printf"mv %s %04d-%s\n",$0,++i,$0}'|sh
+
+for i in {1..10};do echo aa;done
+printf %.0saa\\n {1..10}
+yes aa|head -n10
+jot -b aa 10
+  -b prints the argument repeatedly
+
+mktemp
+  coreutils but not OS X
+mktemp -t tmp
+  this works in OS X but not with coreutils mktemp which requires adding X characters to the template specified with -t
+mktemp -t tmp.XXXXXXXXXX
+  this works in both coreutils and OS X but adds a period followed by literal X characters to the filename in OS X
+x=${TMPDIR}tmp.$(LC_ALL=C tr -dc a-zA-Z0-9</dev/random|head -c10);touch $x;echo $x
+  LC_ALL=C is not needed with GNU tr which does not support Unicode
+  `head -c` is not in POSIX
+
+history
+  bash
+history 1
+  zsh
+  the first argument is the first entry to print
+
+history 10
+  bash
+history -10
+  zsh
+
+#subtract the smallest number from each number on a list of numbers
+awk '{a[NR]=$0;if(NR==1||$0<min)min=$0}END{for(i in a)print a[i]-min}'
+(x=$(cat);awk '{$0-='$(jq -s min<<<"$x")'}1'<<<"$x")
+jq -s 'min as$x|map(.-$x)[]'
+
+sed '/start/,${/pattern/d;}'
+awk '/start/,0{if(/pattern/)next}1'
+
+grep -Eo '[0-9]+'|jq -s add
+gawk '{x+=RT}END{print x}' 'RS=[0-9]+'
+  nawk and mawk do not have RT and nawk does not treat a two character or longer RS as a regex
+perl -lne'$x+=$_ for/\d+/g}{print$x'
+
+convert -rotate 90 input.jpg output.jpg
+  this is lossy
+jpegtran -rotate 90 input.jpg>output.jpg
+  this is lossless
+  jpegtran is part of libjpeg
+
+gstat -c%h .
+gfind -maxdepth 0 -printf %n\\n
+ls -ld|awk '{print$2}'
+
+montage *.png -tile 1x -geometry +0+0 output.png
+  `-geometry +0+0` removes the default padding
+convert *.png -append output.png
+
+montage *.png -tile x1 -geometry +0+0 output.png
+convert *.png +append output.png
+
+grep -cH pattern file[1-9]|sed s/:/\ /
+  -H is not needed when file[1-9] matches two or more files
+grep -H pattern file[1-9]|cut -d: -f1|uniq -c|sort|sed 's/^ *//'
+  -H is not needed when file[1-9] matches two or more files
+for f in file[1-9];do echo $(grep -c pattern $f) $f;done|sort -n
+gawk '/pattern/{++n}ENDFILE{print n,FILENAME;n=0}' file[1-9]|sort -n
+  nawk and mawk do not have ENDFILE
+awk '/pattern/{++a[FILENAME]}END{for(i in a)print a[i],i}' file[1-9]|sort -n
+
+awk '{a[$0]}END{print NR"\n"length(a)}'
+(x=$(cat);wc -l<<<"$x";sort -u<<<"$x"|wc -l)
+tee >(wc -l>/dev/tty)|sort -u|wc -l
+pee 'wc -l' 'sort -u|wc -l'|sort -rn
+  the pee command can print the output of either command first even though `sort -u|wc -l` usually takes more time to finish
+
+comm -12 <(sort -u file1) <(sort -u file2)|wc -l
+awk 'NR==FNR{a[$0];next}$0 in a' file[12]|sort -u|wc -l
+
+for f in *.png;do convert $f -resize 500x -quality 93 /tmp/${f%png}jpg;done
+mogrify -resize 500x -format jpg -quality 93 -path /tmp *.png
+
+identify -format '%w %h %f\n' *.jpg|awk '$1>500||$2>500{print$3}'|xargs mogrify -quality 93 -resize 500x500
+identify -format '%[fx:(h>500||w>500)]%f\n' *.jpg|sed -n s/^1//p|xargs mogrify -quality 93 -resize 500x500
+  %[fx:(h>500||w>500)] is replaced with 1 if the condition is true and with 0 if the condition is false
+mogrify -resize 500x500\> -quality 93 *.jpg
+  this also modifies files whose width and height are 500 pixels or less and changes their image data
+  this does not modify the image data when this is used with lossless files
+
+awk '{x+=$0}END{print x/NR}'
+jq -s add/length
+  this reads the whole input to memory
+
+printf %s\\n "$PWD"/*
+ls|gxargs -rd\\n readlink -f
+  this also resolves symlinks
+  -f canonicalizes paths in coreutils and OpenBSD but it has a different meaning in OS X and FreeBSD
+find "$PWD" -mindepth 1 -maxdepth 1
+  this includes files whose name starts with a period
+
+#covert a file with CRLF line endings encoded as UTF-16 to a file with LF line endings encoded as UTF-8
+dos2unix file
+  dos2unix also converts UTF-16 to UTF-8
+recode utf16/crlf.. file
+iconv -f utf-16 -t utf-8 file|tr -d \\r|sponge file
+  this also removes carriage returns that are not followed by a linefeed
+
+(printf %s\\n aa bb;cat)
+cat <(printf %s\\n aa bb) -
+awk 'NR==1{print"aa\nbb"}1'
+gsed '1iaa\nbb'
+sed $'1i\\\naa\n1i\\\nbb\n'
+
+#list the basenames of each file in dir1, dir2, and dir3, assuming that at least one of the directories exists
+printf %s\\n dir[1-3]/*|cut -d/ -f2
+for d in dir[1-3];do ls -1 $d;done
+print -rl dir[1-3]/*(:t)
+  zsh
+  t (tail) is a modifier for the basename
+ls dir[1-3]|grep '[^:]$'
+  this assumes that filenames do not end with a colon
+gfind dir[1-3] -mindepth 1 -maxdepth 1 -printf %f\\n
+  %f is basename
+  this includes files whose name starts with a period
+
+paste -d\\0 - -
+lam - -
+
+printf %s\\n file<1-99>
+  zsh
+ls -1d file{1..99} 2>/dev/null
+for f in file{1..99};do [ -e $f ]&&echo $f;done
+shopt -s nullglob;printf %s\\n file{[1-9],[1-9][0-9]}
+  bash
+
+#print the RMS of a list of numbers
+awk '{x+=$0*$0}END{print sqrt(x/NR)}'
+jq -s 'map(.*.)|add/length|sqrt'
+
+#sort a single line list where items are delimited by a comma followed by a space
+gsed 's/, /\n/g'|sort|sed '$!s/$/, /'|paste -sd\\0 -
+jq -Rr './", "|sort|join(", ")'
+
+#convert a list of lines to a JSON array of strings
+jq -R .|jq -s .
+  `jq -R .` prints each line as a JSON string literal and -s creates an array for the input lines after parsing each line as JSON
+jq -Rs '.[:-1]/"\n"'
+  -Rs reads the input into a single string
+  [:-1] removes a linefeed from the end of the input
+sed 's/["\]/\\&/g;s/.*/"&"/;1s/^/[/;$s/$/]/;$!s/$/,/'
+  this does not escape ASCII control characters even though they have to be escaped in strings in valid JSON
+
+#test if the value of $char is an ASCII control character
+LC_ALL=C;[[ $char = [[:cntrl:]] ]];echo $?
+  at least bash and zsh
+  [[:cntrl:]] matches non-ASCII control characters in UTF-8 locales
+[[ $char = [$'\001-\017\177'] ]];echo $?
+  bash
+  strings cannot contain null bytes in bash, but \001 can be replaced with \000 in zsh
+LC_ALL=C;case $char in [[:cntrl:]])echo 0;;*)echo 1;esac
+  POSIX
+n=$(printf %d "'$char");[ $n -le 31 ]||[ $n = 127 ];echo $?
+  POSIX
+
+awk '{gsub("\n"," ");print$0"\n"}' RS=|sed \$d
+gawk '{gsub("\n"," ");printf"%s",$0 RT}' RS=
+  nawk and mawk do not have RT
+  this does not replace two or more consecutive empty lines between paragraphs with a single empty line or remove empty lines from the end of the input
+awk '{$1=$1}1' RS= ORS=\\n\\n FS=\\n|sed \$d
+  FS=\\n is not needed if the input does not contain spaces or tabs that should not get collapsed or stripped
+awk '{for(i=1;i<=NF;i++)printf(i<NF?"%s ":"%s\n\n"),$i}' RS= FS=\\n|sed \$d
+  FS=\\n is not needed if the input does not contain spaces or tabs that should not get collapsed or stripped
+
+(x=$(cat);grep pattern<<<"$x";grep -v pattern<<<"$x")
+awk '{if(/pattern/)print;else x=x$0"\n"}END{printf"%s",x}'
+jq -R .|jq -sr 'group_by(test("pattern")|not)[][]'
+  test is like match but it returns true or false instead of a match object
+
+while IFS= read -r l;do printf %s\\n "${x//aa/$l}";done
+  if there would be double quotes around $l, they would be included as part of the replacement text in bash 4.2 and earlier
+x="$x" awk '{gsub(/&/,"\\\\&");x=$0;$0=ENVIRON["x"];gsub("aa",x)}1'
+jq --arg x "$x" -Rr '. as$in|$x|gsub("aa";$in)'
+
+pcregrep -M -o1 -o2 --om-separator=' ' '(?s)<a href="([^"]*)">MP3 Download.*?Rated <strong>([^<]*)'
+  -M is multiline and (?s) makes period match a newline
+  `-o1 -o2 --om-separator=' '` prints the matched groups separated by a space
+jq -Rsr 'scan("(?s)<a href=\"([^\"]*)\">MP3 Download.*?Rated <strong>([^<]*)")|join(" ")'
+
+gstat -c%s *.txt|jq -s add
+  %s is size in bytes
+gdu -cb *.txt|tail -n1|cut -f1
+  -c includes the total size on the last line
+  -b displays sizes in bytes in GNU du
+
+awk -F\; -v OFS=\; '{split($3,a,"/");$3=a[5]}1'
+jq -Rr './";"|.[2]|=(./"/")[4]|join(";")'
+  |= is the update operator
+
+#print the geometric mean of a list of numbers
+awk '{x*=$0}END{print x^(1/NR)}' x=1
+jq -s 'length as$l|reduce.[]as$x(1;.*$x)|pow(.;1/$l)'
+
+awk '{if(length<=80)print;else x=x$0"\n"}END{printf"%s",x}'
+jq -R .|jq -sr 'group_by(length>80)[][]'
+(x=$(cat);awk 'length<=80'<<<"$x";awk 'length>80'<<<"$x")
+
+#indent the first line of each paragraph with two spaces
+gawk '{printf"%s","  "$0 RT}' RS=
+  this removes empty lines from the start of the input
+awk '{if((NR==1||!x)&&/./)printf"  ";x=/./}1'
+
+#print the lines of file2 where no part of a comma-delimited list in the fourth space-delimited column is a chomped line of file1
+awk 'NR==FNR{a[$0];next}{split($4,b,",");for(i in b)if(b[i]in a)next}1' file1 file2
+jq --slurpfile a <(jq -R . file1) -Rr 'select((./" ")[3]|(./",")as$x|$x-$a==$x)' file2
+
+#sort lines in file2 by the line number of the second field in file1, assuming that file1 does not contain duplicate lines
+awk 'NR==FNR{a[$0]=NR;next}{print a[$2],$0}' file1 file2|sort -n|cut -d\  -f2-
+jq -R . file2|jq --slurpfile a <(jq -R . file1) -s 'sort_by((./" ")[1]as$x|$a|indices($x))'
+
+#swap each pair of two lines assuming that the total number of lines is even
+awk '{getline x;print x}1'
+sed -n 'h;n;p;g;p'
+sed -n 'h;n;G;p'
+  G appends a newline character followed by the contents of the hold space to the pattern space
+
+shuf -rn4
+  -r allows repetitions
+awk '{a[NR]=$0}END{srand();for(i=1;i<=4;i++)print a[int(rand()*NR)+1]}'
+  this prints the lines in the same order when it is ran twice within the same second
+
+#delete lines in file2 up to the last line that is also a line of file1
+tac file2|awk 'NR==FNR{a[$0];next}$0 in a{exit}1' file1 -|tac
+gawk 'ARGIND==1{a[$0]}ARGIND==2&&$0 in a{b=FNR}ARGIND==3&&FNR>b' file1 file2{,}
+
+#rename files so that a number in the second period-delimited field of the filename is padded with zeros to ten digits
+rename 's/(?<=\.)([^.]*)/sprintf("%010d",$1)/e' *
+ls|awk -F. -v OFS=. '{x=$0;$2=sprintf("%010d",$2);print"mv "x" "$0}'|sh
+ls|awk -F. -v OFS=. '1;{$2=sprintf("%010d",$2)}1'|parallel -N2 mv {1} {2}
+  -N2 takes two arguments at a time and makes replacement strings like {1} available
+ls|while IFS=. read x y z;do mv $x.$y.$z $x.$(printf %010d $y).$z;done
+
+#print the standard deviation of a list of numbers
+awk '{x+=$0;y+=$0^2}END{print sqrt(y/NR-(x/NR)^2)}'
+jq -s '(map(.*.)|add/length)-pow(add/length;2)|sqrt'
+jq -s '(add/length)as$x|map(pow(.-$x;2))|add/length|sqrt'
+awk '{delta=$0-avg;avg+=delta/NR;mean2+=delta*($0-avg)}END{print sqrt(mean2/NR)}'
+
+sed "$(awk '{print"s/"$1"/"$2"/g"}' search-replace-pairs)" -
+awk 'NR==FNR{a[$1]=$2;next}{for(i in a)gsub(i,a[i])}1' search-replace-pairs -
+jq --slurpfile a <(jq -R './" "' search-replace-pairs) -Rr '. as$in|$a|reduce.[]as$x($in;gsub($x[0];$x[1]))' -
+
+grep -Fxf file1 file2;grep -Fxvf file1 file2
+awk 'NR==FNR{a[$0];next}{if($0 in a)print;else x=x$0"\n"}END{printf"%s",x}' file1 file2
+jq -R . file2|jq --slurpfile a <(jq -R . file1) -rs 'group_by([.]|inside($a))[][]'
+
+i=1;for f in $(cat);do cp $f /tmp/$((i++)).jpg;done
+nl|while read x y;do cp $y /tmp/$x.jpg;done
+parallel cp {} /tmp/{#}.jpg
+  replace {#} with '{=$_=sprintf("%04d",$job->seq())=}' to pad numbers to four digits
+
+repeat 10 {cmd}
+  zsh
+for i in {1..10};do cmd;done
+  brace expansion is not in POSIX
+  `for _ in {1..10};do cmd;done` changes $_ in bash and results in an error in zsh
+for ((i=1;i<=10;i++));do cmd;done
+  the arithmetic for loop is not in POSIX
+  zsh requires adding a space before the first opening parenthesis but bash does not
+i=1;while [ $i -le 10 ];do cmd;i=$((i+1));done
+  POSIX
+  ++ is not in POSIX
+  add double quotes around $i if IFS contains ASCII digits
+
+sed "s/pattern/$(sed 's/[&/\\]/\\&/g'<<<"$x")/g"
+  this assumes that $x does not contain linefeeds
+x=${x//\\/\\\\};x="${x//&/\\&}" awk '{gsub(/pattern/,ENVIRON["x"])}1'
+jq --arg x "$x" -Rr 'gsub("pattern";$x)'
+
+grep -n pattern|cut -d: -f1|tail -n1
+awk '/pattern/{x=NR}END{print x}'
+sed -n /pattern/=|tail -n1
+
+#make the fractional part of numbers that have a fractional part two digits long
+ruby -pe'$_.gsub!(/[0-9]+\.[0-9]+/){"%.2f"%$&}'
+awk '{while(match($0,/[0-9]+\.[0-9]+/)){printf"%s%.2f",substr($0,1,RSTART-1),substr($0,RSTART,RLENGTH);$0=substr($0,RSTART+RLENGTH)};print}'
+
+#scale a list of numbers so that the smallest number becomes 0.0 and the largest becomes 1.0
+awk '{if(NR==1||$0>max)max=$0;if(NR==1||$0<min)min=$0;a[NR]=$0}END{for(i in a)print(a[i]-min)/(max-min)}'
+jq -sr 'min as$min|max as$max|map((.-$min)/($max-$min))[]'
+
+printf %08x\\n 0xff
+printf %08s\\n ff
+  bash but not zsh
+awk 'BEGIN{printf"%08x\n","0xff"}'
+  add -n (--non-decimal-data) in gawk
+
+awk length\<4
+grep -v ....
+
+for f in *;do echo $f;cat $f;done
+awk 'FNR==1{print FILENAME}1' *
+  BEGINFILE is not supported by nawk or mawk but FNR==1 is
+for f in *;do gsed 1F $f;done
+  F prints the filename
+
+(x=$(cat);a=${x//[^(]};b=${x//[^)]};[ ${#a} = ${#b} ];echo $?)
+(x=$(cat);[ ${#${x//[^(]}} = ${#${x//[^)]}} ];echo $?)
+  zsh
+grep -o '[()]'|awk '{++a[$0]}END{exit a["("]!=a[")"]}';echo $?
+awk '{exit split($0,a,"(")!=split($0,a,")")}' RS=\\0;echo $?
+jq -Rse 'indices("(")|length==(indices(")")|length)'>/dev/null;echo $?
+  -Rs reads the input into a single string
+  -e exits with 1 if the last output value is false or null
+grep -o '[()]'|sort|uniq -c|sort -uk1,1|wc -l|grep -qv 2;echo $?
+tee >(tr -dc \(|wc -c) >(tr -dc \)|wc -c)>/dev/null|sort -u|wc -l|grep -qv 2;echo $?
+
+#test if any number on a list of numbers is larger than 50
+awk '$0>50'|read
+awk '$0>50{x=0}END{exit x}' x=1
+  `awk '$0>50{exit 0}END{exit 1}'` would always exit with 1 because an END block is ran even after an exit statement
+jq -se 'map(.>50)|any'>/dev/null
+
+#floor each number on a list of numbers
+awk '{i=int($0);print(i==$0||$0>0)?i:i-1}'
+jq -s 'map(floor)[]'
+perl -MPOSIX -lpe'$_=floor$_'
+awk '{print int($0)}'
+  this gives the wrong result for negative numbers
+
+#count how many numbers on a list of numbers are between each multiple of 100, where the start of each block is inclusive and the end is exclusive
+awk '{print$0+(n-$0%n)%n}' n=-100|awk '{++a[$0]}END{for(i in a)print i,a[i]}'|sort -n
+  the first awk command results in loss of significance for numbers that are smaller than 0 but larger than -1
+jq -s 'map(./100|floor|.*100)[]'|sort|uniq -c|awk '{print$2,$1}'|sort -n
+jq -sr 'map(./100|floor|.*100)|group_by(.)[]|(.[0]|tostring)+" "+(length|tostring)'
+awk '{++a[int($0/100)*100]}END{for(i in a)print i,a[i]}'|sort -n
+  this rounds negative numbers up to a multiple of 100 instead of down to a multiple of 100
+
+#print the recursive contents of each directory whose path is read from STDIN
+while IFS= read -r l;do printf %s\\n "$l"/**/*;done
+  **/* can be replaced with ** in bash but not in zsh, even though that includes the directories themselves like find without `-mindepth 1`
+xargs -I, find , -mindepth 1
+  -I implies -d\\n in GNU xargs, but use `tr \\n \\0|xargs -0I,` with OS X's xargs if the input lines contain spaces, tabs, single quotes, double quotes, or backslashes
+  this includes files whose name starts with a period
+parallel -X find {} -mindepth 1
+  -X fills a command line with multiple arguments
+  this includes files whose name starts with a period
+
+for d in */;do printf %s\\n "$d"*|head -n1;done
+  this shows errors for empty directories in zsh
+printf %s\\n */*|awk -F/ '!a[$1]++'
+for d (*/)printf %s\\n $d*(N[1])
+  zsh
+  N enables null_glob so that this does not result in an error for an empty directory
+  this prints empty lines for empty directories
+
+#convert input that contains URLs on odd lines and titles on even lines to a list of HTML links
+xml esc|sed 'N;s,\(.*\)\n\(.*\),<a href="\1">\2</a>,'
+xml esc|awk '{x=$0;getline;print"<a href=\""x"\">"$0"</a>"}'
+xml esc|while IFS= read -r x&&IFS= read -r y;do printf %s\\n "<a href=\"$x\">$y</a>";done
+
+awk '{gsub(/\0/,"\n\n")}1'
+  this works with gawk and mawk 1.3.4 but not with nawk or older versions of mawk
+perl -pe's/\0/\n\n/g'
+
+#sort paragraphs
+awk '{printf"%s",$0"\0"}' RS=|gsort -z|perl -pe's/\0/\n\n/g'|ghead -n-2
+gawk '{a[NR]=$0}END{asort(a);for(i in a)print a[i]"\n"}' RS=|sed \$d
+  nawk and mawk do not have asort
+jq -Rsr '.[:-1]/"\n\n"|sort|join("\n\n")'
+  this assumes that there are not two or more empty lines between paragraphs and that there are no empty lines at the start or end of the input
+  -Rs reads the input into a single string and .[:-1] removes a linefeed from the end of the input
+
+sed 's,/[^/]*$,,'
+  this prints the whole line on lines that do not contain a forward slash
+rev|cut -d/ -f2-|rev
+  this prints the whole line on lines that do not contain a forward slash
+awk -F/ NF-- OFS=/
+  this does not work with nawk which does not support removing fields by decrementing NF
+  this prints an empty line on lines that do not contain a forward slash
+  this results in a fatal error on an empty line
+jq -Rr '(./"/")[:-1]|join("/")'
+  this prints an empty line on lines that do not contain a forward slash
+
+#format a TSV table as a table where columns are filled with spaces with two spaces of gutter between columns
+column -t
+  add -s$'\t' if the input contains spaces
+  this skips empty fields so that this treats two or more consecutive tabs as a single tab and ignores tabs at the start of lines
+(x=$(cat);rs -c$'\t' -z $(wc -l<<<"$x")<<<"$x")
+  -c changes the input column separator
+  -z sets the width of each column to the width of the longest value of the column instead of making all columns the same width
+  add -n if some line has fewer columns than the first line
+
+#print the sum of numbers in each column in a TSV table of numbers, assuming that each row has the same number of columns
+rs -T -c$'\t'|awk '{s=0;for(i=1;i<=NF;i++)s+=$i;print s}'|paste -s -
+  in rs -T transposes rows and columns and -c changes the input column separator
+awk '{for(i=1;i<=NF;i++)a[i]+=$i}END{for(i in a)print a[i]}'|paste -s -
+jq -R .|jq -sr 'map(./"\t"|map(tonumber))|transpose|map(add|tostring)|join("\t")'
+rs -T -c$'\t' -C$'\t'|jq -R '.[:-1]/"\t"|map(tonumber)|add'|paste -s -
+
+#sort a Markdown file that consists of sections that start with second level ATX headings by the headings
+gawk '{sub(/^## /,"\0&")}1'|gsort -z|tr -d \\0|sed \$d
+  \0 terminates a string in nawk and in mawk 1.3.3 and earlier
+jq -Rsr '[scan("(?sm)^## .*?(?=\n\n## |\\Z)")]|sort|join("\n\n")'
+  (?s) makes period match a newline and (?m) makes caret match the start of a line and dollar sign match the end of a line
+
+awk 'NR==FNR{a[$0];next}{for(i in a)if(!index($0,i))next}1' substrings -
+jq --slurpfile a <(jq -R . substrings) -Rr 'select(. as$in|$a|map(inside($in))|all)'
+
+awk '{$0++}1'
+  `awk '$0++'` would not print a line after replacing -1 with 0
+perl -ple'$_++'
+jq -s '.[]+1'
+  this reads the whole input to memory
+
+ffprobe -v error -of flat -select_streams v:0 -show_entries stream=width,height input.mp4|cut -d= -f2|paste -sd\  -
+  `-v error` disables the default STDERR output
+  `-of flat` uses an output format with one key-value pair per line
+  `-select_streams v:0` disables showing information for subtitle streams
+mdls -nkMDItemPixel{Height,Width} input.mp4|sed 's/.* //'|tac|paste -sd\  -
+  OS X
+  width and height are not indexed for some file types like mkv
+
+#extract archives of different types
+unar *
+  unar is a command line version of The Unarchiver
+dtrx *
+7z e *
+  7z is part of p7zip
+  this does not create a containing directory for the extracted files when the top level of an archive contains multiple files
+
+open http://example.com
+  OS X
+xdg-open http://example.com
+  Linux
+  gnome-open has been deprecated and is no longer included with Ubuntu
+python -mwebbrowser http://example.com
+
+((float>=50))
+  zsh and ksh93 but not bash
+  this does not work in ksh93 in a locale that uses comma as decimal separator when $float uses period as decimal separator
+awk "BEGIN{exit $float<50}"
+awk '$0>=50'<<<$float|read
+((${float%.*}>=50))
+  this does not work if $float starts with a period or a minus sign followed by a period
+
+eval x=\$$#
+  POSIX
+x=${@:$#}
+  at least bash and zsh
+  when there are no arguments, ${@:$#} is treated as $0 in zsh but as empty in bash
+x=${@[$#]}
+  zsh
+x=${!#}
+  bash
+
+eval x=\$$n
+  POSIX
+x=${!n}
+  bash
+x=${(P)n}
+  zsh
+
+pbcopy
+  OS X
+  use `LC_CTYPE=UTF-8 pbcopy` to preserve non-ASCII characters in UTF-8 input in the C locale
+xsel -ib
+  Linux
+  -i gets input from STDIN and -b modifies the clipboard instead of the primary selection
+
+perl -pe's/\d+/$&+1/ge'
+gawk '{printf"%s",$0(RT==""?"":RT+1)}' 'RS=[0-9]+'
+awk '{x=$0;$0="";while(match(x,/[0-9]+/)){$0=$0 substr(x,1,RSTART-1)substr(x,RSTART,RLENGTH)+1;x=substr(x,RSTART+RLENGTH)}$0=$0 x}1'
+
+ggrep -Poz '(?s)\{[^}]*pattern.*?\}'
+pcregrep -M '(?s)\{[^}]*pattern.*?\}'
+  -M is multiline
+jq -Rrs 'scan("(?s)\\{[^}]*pattern.*?\\}")'
+
+awk 'NR<=3{x=x$0"\n";next}1;END{printf"%s",x}'
+sed '1,3{H;1h;d;};$G'
+  without ;1h an empty line is printed on the fourth last line
+  this does not print anything if the number of lines of the input is three or fewer
+(x=$(gsed -u 3q);cat;printf %s\\n "$x")
+  -u is unbuffered in GNU sed
+  the command substitution removes empty lines if the third, third and second, or third, second, and first line is empty
+perl -ne'$.<=3?$x.=$_:print}{print$x'
+tee >(sponge /dev/stdout|gsed -u 3q)|sed 1,3d
+  this deletes the first line if the number of lines of the input is two or one
+  without `sponge /dev/stdout|` this would fail with long inputs
+
+set {a..z};echo ${12}
+echo 96 12 + P|dc
+awk 'BEGIN{printf"%c\n",96+12}'
+printf \\u$(printf %x $((96+12)))\\n
+printf \\u$(([##16]96+12))\\n
+  zsh
+
+awk '/^$/&&!x{print"aa";x=1}1'
+gsed '0,/^$/s//aa\n&/'
+  if 0 is replaced with 1, this results in an error when the first line is empty
+gsed -e'/^$/{iaa' -e':1;n;b1}'
+gsed ':1;$!{N;b1};s/\n\n/\naa\n\n/'
+  this reads the whole input into memory
+
+#use ncurses to search for lines from STDIN and to select a line
+fzf
+  add +s to disable sorting the results or add -e to include only exact matches
+peco
+
+awk -F: '{for(i=NF;i>=1;i--)printf"%s",$i (i==1?"\n":":")}'
+jq -Rr './":"|reverse|join(":")'
+ruby -F: -alpe'$_=$F.reverse*":"'
+  -a sets $F to $_.split and -F changes $/
+
+a=(*(DN));echo $#a
+  zsh
+  D enables glob_dots and N enables null_glob
+shopt -s dotglob nullglob;a=(*);echo ${#a[@]}
+  bash
+  add double quotes around ${#a[@]} if IFS can contain ASCII digits
+find . ! -name . -prune|wc -l
+  replace `wc -l` with `grep -c /` if filenames contain newlines
+ls -A|wc -l
+  this assumes that filenames do not contain newlines
+ls -f|wc -l|awk '{$0-=2}1'
+  this assumes that filenames do not contain newlines
+  -f can make ls faster
+  -f implies -a
+c=0;set -- [^.]*;[ -e "$1" ]&&c=$#;set -- .[^.]*;[ -e "$1" ]&&c=$((c+$#));set -- ..?*;[ -e "$1" ]&&c=$((c+$#));echo $c
+  this results in an error in zsh with the default settings when there are no matches for one of the globs
+  if the first [^.]* is replaced with *, files whose name starts with a period are counted twice when an option like dotglob in bash or glob_dot in zsh is enabled
+  the dashes after the last two set commands are needed when for example nullglob is enabled in bash and the glob after either set command does not match any files
+
+find . ! -name .\*|wc -l
+  if filenames contain newlines, use `find .// ! -name .\*|grep -c //`
+  `! -name .\*` also excludes .
+a=(**/*(N));echo $#a
+  zsh
+  N enables null_glob so that the command does not result in an error in an empty directory
+shopt -s globstar nullglob;a=(**);echo ${#a[@]}
+  bash
+shopt -s globstar nullglob;printf %s\\n **|wc -l
+  bash
+  this assumes that filenames do not contain newlines
+
+date -ud@$((0x5685c17f))
+  GNU
+date -ur0x5685c17f
+  BSD
+
+parallel --number-of-cpus
+sysctl hw.physicalcpu
+  OS X
+
+parallel --number-of-cores
+sysctl hw.logicalcpu
+  OS X
+
+while read l;do echo "$l $(curl "$l" -ILso /dev/null -w '%{url_effective}')";done
+parallel -k printf %s\\\  {}\;curl {} -ILso /dev/null -w '%{url_effective}\\n'
+parallel -k --tag curl {} -ILso /dev/null -w '%{url_effective}\\n'|tr \\t ' '
+   --tag prepends the argument followed by a tab to each output line
+(x=$(cat);paste -d' ' <(printf %s\\n "$x") <(printf %s\\n "$x"|xargs curl -ILso /dev/null -w '%{url_effective}\n'))
+  use `xargs -d\\n` if the input contains single quotes or empty lines
+
+for f in *.gz;do zcat $f|bzip2 >${f%gz}bz2;rm $f;done
+parallel 'zcat {}|bzip2 >{.}.bz2;rm {}' ::: *.gz
+
+for f in *;do for g in *;do echo $f $g $(diff $f $g|wc -l);done;done|sort -nk3
+parallel --tag 'diff {1} {2}|wc -l' ::: * ::: *|sort -nk3
+  --tag prepends the arguments joined by a space and followed by a tab to each output line
+
+xml sel -t -v '//element[@attr1="somevalue"]/@attr2'
+  `-t -v` prints the value of an expression
+xmllint --xpath 'string(//element[@attr1="somevalue"]/@attr2)' -
+  when the XPath expression matches the attributes of multiple elements, this only prints the value of the first one
+  string() returns the value of an attribute
+
+#use xmlstarlet to select namespaced elements
+curl -s www.w3.org/2000/07/8378/schemas/xhtml1-sample.xml|xml sel -t -c //_:a
+  underscore is an alias for the default namespace in xmlstarlet
+  this does not match anything if _: is removed because the html element contains the attribute xmlns="http://www.w3.org/1999/xhtml"
+curl -s www.w3.org/2000/07/8378/schemas/xhtml1-sample.xml|xml sel -N n=http://www.w3.org/1999/xhtml -t -c //n:a
+  -N sets an alias for a namespace
+  the namespace contains forward slashes so it cannot be inserted directly to the XPath expression
+curl -s www.w3.org/2000/07/8378/schemas/xhtml1-sample.xml|xml sel -t -c '//*[local-name()="a"]'
+  local-name() returns the local name of a node
+
+awk '{x=$0;gsub(" ","-");print"["x"]("tolower($0)")"}'
+while IFS= read -r l;do x=${l// /-};echo "[$l](${x,,})";done
+  bash
+while {IFS= read -r l} {print -r "[$l](${${l// /-}:l})"}
+  zsh
+gsed 'h;s/ /-/g;s/.*/\L&/;G;s/\(.*\)\n\(.*\)/[\2](\1)/'
+
+#list files whose size is 2048 bytes or less in the current directory
+find . ! -name . -prune -size -3k
+find . ! -name . -prune ! -size +2k
+printf %s\\n *(Lk-3)
+  zsh
+
+#process lines in a read loop so that the part of the input after the last linefeed is not skipped when the input does not end with a linefeed
+printf a\\nb|while read l||[ -n "$l" ];do echo $l;done
+printf a\\nb|awk 1|while read l;do echo $l;done
+  `awk 1` adds a linefeed to the end of the input when the input does not end with a linefeed and is not empty
+
+awk '$2~/^[^,]*,[^,]*,[^,]*$/'
+awk 'split($2,a,",")==3'
+
+awk '!a[$0]++'
+awk '!($0 in a){a[$0];print}'
+  this was slightly slower than `awk '!a[$0]++'` with both gawk and nawk in my testing even though this is called more efficient than `awk '!a[$0]++'` in awk1line
+sort -u
+  this also sorts the input
+  when I compared this with `gawk '!a[$0]++'`, this was faster in the C locale but slower in a UTF-8 locale with both GNU sort and OS X's sort
+  this typically compares collation orders so that it does not allow illegal byte sequences in a UTF-8 locale
+  `printf %b\\n \\u0d4c \\u0d57 \\u0d46\\u0d57|sort -u` and `printf '\u2460\n\u2461\n'|sort -u` print one line in a UTF-8 locale in GNU/Linux with at least GNU sort
+sort|uniq
+  this also sorts the input
+  POSIX-compliant implementations of uniq compare collation orders but GNU uniq compares byte values
+  when I compared this in the C locale with `sort -u` in the C locale, this was about as fast with GNU sort and uniq but slower with OS X's sort and uniq
+  when I compared this in a UTF-8 locale with `sort -u` in a UTF-8 locale, this was much slower with both GNU sort and uniq and OS X's sort and uniq
+
+gsed 's/\b./\u&/g'
+  this considers words to be delimited by word boundaries
+while {IFS= read -r l} {print -r -- ${(C)l}}
+  zsh
+  this considers words to be delimited by word boundaries
+print -r -- ${(C)$(cat)}
+  zsh
+while read -ra a;do echo "${a[@]^}";done
+  bash
+  this considers words to be delimited by characters in IFS
+  when IFS has not been changed, this removes spaces and tabs from the start and end of lines and replaces sequences of one or more space or tab with a space
+jq -Rr './" "|map((.[:1]|ascii_upcase)+.[1:])|join(" ")'
+  this considers words to be delimited by spaces
+  [1] cannot be used with a string but [:1] can
+
+eyeD3 -a Artist -t Title file.mp3
+mid3v2 -a Artist -t Title file.mp3
+  `pip install mutagen` installs mid3v2
+  id3v2 does not support Unicode but mid3v2 does
+
+eyeD3 --no-color file.mp3|sed -n s/^title:\ //p
+  --no-color is needed even when the output is not to a terminal in OS X but not in Linux
+mid3v2 -l file.mp3|sed -n s/^TIT2=//p
+mdls -rnkMDItemTitle file.mp3
+  OS X
+
+for f in *.mp3;do l=$(eyeD3 --no-color "$f");mv "$f" "$(printf %s\\n "$(sed -n 's,^artist: ,,p'<<<"$l") - $(sed -n 's,^track: ,,p'<<<"$l")"|tr '/:?<>\\*|"^' _).mp3";done
+for f in *.mp3;do l=$(mid3v2 -l "$f");mv "$f" "$(printf %s\\n "$(sed -n s,^TPE1=,,p<<<"$l") - $(sed -n s,^TIT2=,,p<<<"$l")"|tr '/:?<>\\*|"^' _).mp3";done
+
+for f in *.mp3;do a=${f%% - *};t=${f#* - };t=${t%.mp3};eyeD3 -a "$a" -t "$t" "$f";done
+for f in *.mp3;do a=${f%% - *};t=${f#* - };t=${t%.mp3};mid3v2 -a "$a" -t "$t" "$f";done
+
+tee /dev/stdout
+tee -
+  coreutils 8.23 and earlier but not newer versions of coreutils or POSIX
+
+gxargs -d\\n cmd
+tr \\n \\0|xargs -0 cmd
+  -0 is not in POSIX
+  this uses both linefeed and null as input delimiters
+sed $'s/[ \t\\'\''"]/\\&/g'|xargs cmd
+  $'' quotes are not in POSIX
+
+#round each number on a list of numbers to the nearest integer multiple of 4
+awk '{print sprintf("%.0f",$0/4)*4}'
+  this rounds both 6 and 10 to 8
+jq -R 'tonumber/4+.5|floor*4'
+  this always rounds numbers whose modulo for 4 is 2 or -2 up
+awk '{print int(($0/4)+.5)*4}'
+  this always rounds numbers whose modulo for 4 is 2 or -2 up
+  this gives the wrong result for negative numbers
+
+#round each number on a list of numbers up to an integer multiple of 4
+awk '{print$0+(n-$0%n)%n}' n=4
+  this results in loss of significance for input numbers that are smaller than 0 but larger than -1
+perl -MPOSIX -lpe'$_=ceil($_/4)*4'
+  the ceil function is in the POSIX module
+
+#round each number on a list of numbers down to an integer multiple of 4
+awk '{print$0+(n-$0%n)%n}' n=-4
+  this results in loss of significance for input numbers that are larger than 0 but smaller than 1
+perl -MPOSIX -lpe'$_=floor($_/4)*4'
+jq -R 'tonumber/4|floor*4'
+awk '{i=int($0/4);print((i==$0||$0>0)?i:i-1)*4}'
+awk '{print int($0/4)*4}'
+  this assumes that the input does not contain negative numbers because this rounds negative numbers up instead of down
+
+sudo reboot
+sudo shutdown -r now
+osascript -e'tell app"system events"to restart'
+  OS X
+  this sends the loginwindow process the same Apple event that is sent when restarting from the GUI
+
+#display the number of lines in the middle of a pipeline
+(x=$(cat);wc -l<<<"$x">/dev/tty;printf %s\\n "$x")
+tee >(wc -l>/dev/tty)|sponge /dev/stdout
+  without `sponge /dev/stdout` for example `seq 99999|tee >(wc -l>/dev/tty)|head` would print the number of lines read by the head command before the head command exits
+
+shopt -s extglob;printf %s\\n !(*.@(jpg|jpeg|png))
+  bash
+shopt -s extglob;printf %s\\n !(*.jpg|*.jpeg|*.png)
+  bash
+printf %s\\n *|grep -Ev '\.(jpe?g|png)$'
+setopt extendedglob;printf %s\\n ^(*.jpg|*.jpeg|*.png)
+  zsh
+
+#print a CRC32 checksum
+cksum -o3|awk '{printf"%x\n",$1}'
+  OS X and BSDs but not coreutils
+  `apt install freebsd-buildutils` installs FreeBSD cksum to /usr/lib/freebsd/cksum in Debian
+crc32 <(cat)
+  crc32 is part of the libarchive-zip-perl package in Debian
+
+#print each line with an odd line number that is followed by a line that consists of a number smaller than 10
+awk '{if(!getline x)exit}x<10'
+  if `if(!getline x)exit` is replaced with getline, this prints the last line when the last line has an odd line number and consists of a number smaller than 10
+awk '{x=$0}getline&&$0<10{print x}'
+paste - -|awk '$2<10{print$1}'
+  this assumes that the input does not contain spaces or tabs
+
+zenity --entry
+osascript -e'text returned of(display dialog""default answer"")'
+  OS X
+
+zenity --info --text=Message
+osascript -e'display dialog"Message"'
+  OS X
+
+notify-send Title
+osascript -e'display notification""with title"Title"'
+  OS X 10.9 and later
+terminal-notifier -message '' -title Title
+  OS X 10.8 and later
+
+readlink -f "$file"
+  coreutils and OpenBSD but not OS X or FreeBSD
+realpath "$file"
+  coreutils but not OS X
+
+awk '{print length}'
+jq -R length
+perl -lne'print length'
+  without -l this would count a linefeed at the end of a line as an additional character
+
+afplay file.mp3
+  OS X
+play file.mp3
+  play is part of sox
+ffplay file.mp3
+  `brew install ffmpeg --with-ffplay` installs ffplay in OS X
+mplayer file.mp3
+paplay file.mp3
+  paplay is part of pulseaudio
+mpg123 file.mp3
+  this only works with MP3 and older MPEG audio formats but not with MP4
+
+#print the lines of file2 that start with one of the chomped lines of file1
+grep -f <(sed 's/[[^.\$*]/\\&/g;s/^/^/' file1) file2
+x=$(sed 's/[[$(*+.?\^{]/\\&/g;s/^/^/' file1|paste -sd\| -) awk '$0~ENVIRON["x"]' file2
+  this can result in an argument list too long error
+awk 'NR==FNR{a[$0];next}{for(i in a){if($0~"^"i){print;next}}}' <(sed 's/[[$(*+.?\^{]/\\&/g' file1) file2
+jq --slurpfile a <(jq -R . file1) -Rr '. as$in|select($a|map(. as$x|$in|startswith($x))|any)' file2
+mapfile -t a<file1;while IFS= read -r l;do for x in "${a[@]}";do if [[ $l = "$x"* ]];then printf %s\\n "$l";break;fi;done;done<file2
+  bash
+  the double quotes around $x disable interpreting pattern matching characters in bash but they are not needed in zsh
+
+#run a command five times and print the average elapsed time of the last three times
+TIMEFORMAT=%E;for i in {1..5};do exec 2>&1;time cmd&>/dev/null;done|sed 1,2d|jq -s add/length
+  bash
+  the time builtin prints to STDERR in bash
+TIMEFMT=%E;repeat 5 {time cmd>/dev/null}|tr -d s|sed 1,2d|jq -s add/length
+  zsh
+  replace `time cmd` with `time (cmd)` when cmd is a pipeline with two or more parts because the time builtin prints statistics for each part of a pipeline in zsh
+  the time builtin prints to STDOUT in zsh
+  an s suffix is always added to times but other suffixes are not used for longer times
+
+find . -maxdepth 1 -type f -size -100k -exec grep -H pattern {} +
+grep -H pattern *(.Lk-100)
+  zsh
+  period is a qualifier for regular files and L matches files by size (length)
+
+#filter a list of filenames to only print the names of files that exist and are regular files
+while IFS= read -r l;do [ -f "$l" ]&&printf %s\\n "$l";done
+gxargs -rd\\n gstat -c%F,%n|awk -F, '$1=="regular file"||$1=="empty regular file"'|cut -d, -f2-
+  %F is file type
+gxargs -rd\\n stat -f%T\ %N|sed -n s,^\ ,,p
+  BSD
+  this also includes at least block-special files and character-special files
+  %T uses the same characters as `ls -F` to indicate file types
+
+#filter a list of filenames to only print the names of files that exist and are directories
+while IFS= read -r l;do [ -d "$l" ]&&printf %s\\n "$l";done
+gxargs -rd\\n ls -dp|grep /\$
+  this also includes symlinks to directories
+  this adds a forward slash to the end of each output line
+  this adds a second forward slash to the end of an input line that already ends with a forward slash with at least GNU ls and OS X's ls
+gxargs -rd\\n gstat -c%F\ %n|sed -n s/^directory\ //p
+gxargs -rd\\n stat -f%T\ %N|sed -n s,^/\ ,,p
+  BSD
+
+x=$(head -n1 file)
+  this does not include a linefeed
+IFS= read -r x<file
+  this includes a linefeed
+
+cut -d$'\u1234' -f2
+  this works with OS X's cut in UTF-8 locales but results in an error in the C locale
+  this results in an error with GNU cut in both UTF-8 locales and in the C locale
+awk -F$'\u1234' '{print$2}'
+  this works in both UTF-8 locales and in the C locale
+  in the C locale the FS is treated as a sequence of three characters so that `LC_ALL=C awk -F$'\u1234' 'BEGIN{print length(FS)}'` prints 3
+
+gls -l --time-style +'%b %e %H:%M:%S %Y'
+ls -lT
+  OS X
+
+wc -l
+  this counts the number of linefeeds
+  this prints one or more spaces before the number of lines in OS X's wc but not in GNU wc
+  in OS X's wc this prints one space before the number of lines even when the width of the field for the number of lines is larger than the default width of the field
+  this prints 0 when the input is empty
+awk 'END{print NR}'
+  this counts the part of the input after the last linefeed as an additional line when the input does not end with a linefeed
+  this prints 0 when the input is empty
+sed -n \$=
+  this counts the part of the input after the last linefeed as an additional line when the input does not end with a linefeed
+  this prints nothing when the input is empty
+
+#convert decimal to radix 64
+awk 'NR==FNR{a[NR-1]=$0;next}{if($0==0){print"A";next}o="";for(n=$0;n!=0;n=int(n/64))o=a[n%64]o;print o}' <(printf %s\\n {A..Z} {a..z} {0..9} - _) -
+  this results in loss of precision with 2**53+1 and larger numbers, but to avoid it you can add -M (--bignum) in gawk 4.1 and later
+a=({A..Z} {a..z} {0..9} - _);while read l;do if ((l==0));then echo A;continue;fi;o=;for ((;l!=0;l/=64));do o=${a[l%64]}$o;done;printf %s\\n $o;done
+  bash
+  replace l%64 with l%64+1 in zsh
+  this results in integer overflow with 2**63 and larger numbers
+
+#convert radix 64 to decimal
+awk 'NR==FNR{a[$0]=NR-1;next}{o=0;for(i=NF;i>=1;i--)o+=a[$i]*64^(NF-i);print o}' FS= <(printf %s\\n {A..Z} {a..z} {0..9} - _) -
+  this results in loss of precision with 2**53+1 and larger numbers, but to avoid it you can add -M (--bignum) in gawk 4.1 and later
+i=0;declare -A a;for x in {A..Z} {a..z} {0..9} - _;do a[$x]=$((i++));done;while read l;do o=0;for((i=${#l};i>=1;i--));do let o+=${a[${l:i-1:1}]}*64**(${#l}-i);done;echo $o;done
+  bash
+  this results in integer overflow with 2**63 and larger numbers
+
+#replace Latin letters with diacritics with letters that do not have diacritics
+iconv -f utf-8 -t ascii//TRANSLIT
+  this uses special characters to represent diacritics in OS X's iconv so that this replaces for example LATIN SMALL LETTER E WITH ACUTE with 'e instead of e
+unaccent utf-8
+  `brew install unac` installs unaccent in OS X
+
+#convert characters in precomposed form to decomposed form
+uconv -f utf-8 -t utf-8 -x NFD
+  `brew install icu4c` installs uconv to /usr/local/opt/icu4c/bin/uconv in OS X
+iconv -f utf-8 -t utf-8-mac
+  OS X
+  this does not convert text to NFD but to a variant of NFD used by HFS+ where the characters from 2000 to 2FFF, F900 to FAFF, and 2F800 to 2FAFF are not decomposed
+
+awk 'NR==1;END{print NR}'
+sed -n '1p;$='
+
+pup
+tidy -i -wrap 0
+  -i indents the output and `-wrap 0` disables wrapping
+  the main implementation of tidy does not support HTML5 but tidy-html5 does
+  `brew install tidy-html5` installs tidy-html5 to /usr/local/bin/tidy in OS X
+xmllint --format --html -
+xml fo -H
+  -H is --html
+  `xml fo -h` shows help for the format subcommand
+
+awk 'NR==1&&/pattern/{exit}1'
+gsed '1{/pattern/Q}'
+sed -n '1{/pattern/q;};p'
+
+datediff 10:33:56 10:36:10 -f%0H:%0M:%0S
+  datediff is from dateutils
+gdate -ud@$(($(gdate -ud'1970-01-01 10:36:10' +%s)-$(gdate -ud'1970-01-01 10:33:56' +%s))) +%T
+gdate -ud "0 $(gdate -ud10:36:10 +%s) sec - $(gdate -ud10:33:56 +%s) sec" +%T
+TZ=UTC0 gawk 'BEGIN{print strftime("%T",mktime("1970 1 1 10 36 10")-mktime("1970 1 1 10 33 56"))}'
+  mawk 1.3.4 also has strftime and mktime
+
+d=2016-12-25;until [ $d = 2017-01-01 ];do echo $d;d=$(gdate -d$d+1day +%F);done
+dateseq 2016-12-25 2017-01-01
+  dateseq is from dateutils

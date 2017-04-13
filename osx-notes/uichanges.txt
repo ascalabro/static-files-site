@@ -1,0 +1,122 @@
+#OS X
+the output volume curve could be steeper or there could be more steps between the lowest few quarter bars
+there could be more steps for display brightness between the lowest few bars and display sleep
+setting display brightness to zero could be equivalent to putting displays to sleep, because many users do not know about the keyboard shortcut for putting displays to sleep
+the default text rendering style could be more like the light setting that was included in System Preferences in 10.5 and earlier
+the animations for opening and closing windows that were added in 10.8 could be removed
+smooth scrolling could be disabled by default or the option to disable it could be added back to System Preferences
+the default location in save dialogs should not be iCloud or choosing a non-iCloud location should require fewer steps
+save and print dialogs could be expanded by default
+scroll bars would not need to be shown by default when using a mouse with a scroll wheel
+autocorrect should not be enabled by default
+screen savers could be removed
+user pictures could be removed or the step for selecting a user picture when setting up a new account could be removed
+alert sounds and sound effects could be removed or disabled by default
+System Preferences could have an option to disable spell checking by default in all applications
+System Preferences could have an option to not put a laptop to sleep when the lid is closed
+System Preferences could have an option to disable the internal display of a laptop when using an external display
+the top level menus on the menu bar could be expanded on hover
+there could be a keyboard shortcut and a menu item in the Apple menu for locking the screen
+the context menu of the clock menu extra could include a calendar or a menu item for opening the Calendar application
+when the Dock is hidden, it should not take up a four pixel area on one side of the screen
+when an application is selected from the application switcher, it should be sent a reopen event even when the option key is not held down
+the maximum speed for automatic scrolling could be faster when for example scrolling down a window whose bottom edge is at the bottom of the screen
+the animations for entering and exiting full screen and changing spaces could be removed
+there could be an option to not use spaces for full screen windows, or full screen windows could not use spaces by default
+applications like Terminal and QuickTime Player could have an option to be opened in full screen by default
+command-H should not be disabled in full screen
+the step for registering a Mac and the option to sign up to an Apple mailing list could be removed from Setup Assistant
+network Time Machine volumes like Time Capsules would not need to be unmounted after a backup finishes so that they could be accessed from Finder and shells
+installers could be replaced with installers that only have a single step
+Java should not be removed when upgrading to a major new version of OS X
+the dialogs shown when opening quarantined files and when opening an application for the first time could be removed
+files like ~/Downloads/About Downloads.lpdf should be removed
+Finder could allow deleting the top level folders in the home folder and they should not be recreated if they are deleted
+when the clipboard contains references to files, the plain text version of the clipboard could contain the full paths of the files instead of the basenames
+the startup sound could be removed
+when the alert volume is set to zero, actions that would cause an alert sound should not activate the sound output so that a quiet hiss is produced for some period of time
+when there are two non-contiguous selections in a file dialog, shift-clicking a file should extend the selection made last and not select all files between the two selections
+the maximum value for the mouse tracking speed in System Preferences could be larger
+when multiple files are copied from Finder or multiple playlist items are copied from iTunes, the clipboard should use LF instead of CR line endings
+
+#Activity Monitor
+the force quit button should not be disabled when multiple processes are selected
+
+#App Store
+entering an Apple ID password wouldn't need to be required when updating or installing applications
+
+#Archive Utility
+Archive Utility could support more formats like rar or 7z
+
+#CharacterPalette
+the Unicode category that includes all characters could be included in the sidebar by default
+
+#Finder
+the default view for new windows should not be All My Files, or the All My Files view could be removed
+the Arrange By modes that were added in 10.7 could be removed
+the home folder and the computer view could be added back to the sidebar
+.DS_Store files could be removed
+there could be some way to set some view mode and window dimensions as default for all Finder windows
+in list view, the target folder for actions like pasting and creating a new folder could depend on the selected items instead of always being the root folder of the window
+there could be less empty space between icons when using a large icon size in icon view, because large icon sizes are often used to view images
+the action for creating an archive could open a window with an option to use other formats than zip and to not create AppleDouble files
+the Cover Flow view could be removed
+windows for the trash could have an option to sort files by date moved to trash
+transparent parts of icons could be clickable
+there could be a menu item and a keyboard shortcut to toggle showing hidden files
+
+#iBooks
+when full keyboard access is enabled, the keyboard focus should not be on the toolbar by default, so that pressing space would scroll a page down instead of selecting the first button on the toolbar
+the extra text added to the clipboard when copying text should be removed and long pieces of copied text should not be cut off after approximately the first 1200 characters
+
+#iTunes
+when a folder that contains playlist files is added to iTunes, a playlist should not be added for each playlist file
+when files are added to iTunes, they could be added on the background so that the modal dialog for adding files would not be displayed
+determining gapless playback information and determining audio volume could be performed without any indication in the UI
+there could be some way to automatically add files from specific folders to iTunes so that the files are not moved or copied to the iTunes Media folder
+there could be an action for removing all items whose files are missing from the iTunes library
+there should not be an error dialog when iTunes is opened at login when there is no internet connection
+the iTunesHelper process should not be shown on the list of login items in System Preferences
+the method used to automatically adjust the volume of songs could be changed, because the current method makes many songs sound much more loud or quiet than other songs
+when the element for cover art in the information window has focus and the clipboard contains an image, pressing command-V should add the image as cover art for the selected tracks
+iTunes could support flac or ogg
+when a playlist is displayed in the table view and is sorted by the first column so that it is not sorted by any criteria, tracks within the same album could be sorted by track number and not by filename
+option-up, option-down, option-shift-up, and option-shift-down should work in a table view for a playlist
+playlists could have an optional column for the path of a file
+there could be an action to delete the selected items from the library and to move their files to the trash
+there could be some way to change the playback speed multiplier of audio files
+
+#Preview
+normal and full screen windows for PDFs could have a white background and the shadows and margins around the pages of PDFs could be removed
+when multiple images are opened in a single window, menu items like "Zoom To Fit" could apply to all images even when all images are not selected in the sidebar
+when multiple images are opened in a single window, there shouldn't be a noticeable delay before the image is changed when for example pressing an arrow key
+the contact sheet view could have less empty space between images
+in 10.10 and later, Preview should use LCD font smoothing when LCD font smoothing is enabled from System Preferences
+
+#Safari
+the location bar could include more matches of history items apart from matches of a single substring of either the URL or the title
+the full URL should be filled in on the location bar even after selecting a result that is matched by the title or from the middle of the URL
+the suggested search phrases that were added to the location bar in 10.9 could be removed
+the bookmarks bar and top sites could be empty by default
+the menu that is shown when the back button is held could also be shown when the back button is secondary-clicked
+when the web inspector is opened in a split window and has keyboard focus, command-W could close the web inspector instead of closing the whole tab
+when a tab for a video or audio file is selected, the menu bar item for saving a page should download the file instead of creating an empty file with the same name as the file
+the status bar could be removed and the information in it could only be shown in the bottom corner of a window when for example a link is hovered like in Chrome
+when the text on the location bar of a tab has been edited and the tab is moved to another place on the tab bar, the text on the location bar should not revert to the original text
+when the text on the location bar has been edited and a URL is opened in Safari from another application, the URL should not be opened in a new window
+the option to show the full URL on the location bar could be enabled by default in Safari 8 and later
+the bookmarks and frequently visited sites that are shown when focusing the location bar in Safari 8 and later could be removed, or there could be an option to not show them
+when text that looks like a URL surrounded by double quotes is entered on the location bar, it should be treated as a search phrase and not as a URL
+when the web inspector is opened in a split window so that it has keyboard focus and is then closed, the keyboard focus should go to the main web view instead of not being on any view
+if the default application for opening PDF files is not Preview, the name of the context menu item for opening a PDF in an external application should not be "Open with Preview"
+when a page opened in a new tab has not finished loading and a URL is opened in Safari from another application, the URL should not be opened over the new tab
+middle-clicking a link in a PDF should open the link in a new tab instead of not having any effect
+when an image is downloaded from the web inspector, it should not always have the filename "Unknown" without a filename extension
+clicking the video part of a video player should toggle playing the video
+in the web inspector, the home and end keys should scroll to the beginning or end of a view instead of moving the cursor to the beginning or end of a line
+when a file that is being downloaded is moved, an error about not having enough disk space to save the file should not be shown
+when a link that starts a download is opened in a new tab, it wouldn't need to open an empty tab
+
+#Script Editor
+there could be an action to toggle a comment
+the syntax highlighting settings should not occasionally revert to the default settings when for example Script Editor is forced to quit

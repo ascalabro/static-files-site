@@ -1,0 +1,368 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name=viewport content=width=device-width,initial-scale=1>
+<style>
+* {
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+body {
+  font: 16px Georgia, serif;
+}
+pre, code {
+  font: 14px Menlo, 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+  white-space: pre-wrap;
+  background: #e5e5e5;
+}
+blockquote {
+  background: #e5e5e5;
+  margin-left: 0;
+  margin-right: 0;
+  border-left: 4px solid #aaa;
+  padding: 1em 0 1em 1em;
+}
+li p:first-child, blockquote p:first-child {
+  margin-top: 0;
+}
+li p:last-child, blockquote p:last-child {
+  margin-bottom: 0;
+}
+</style>
+<title>DefaultKeyBinding.dict</title>
+<h1>DefaultKeyBinding.dict</h1>
+<p>Most of the keybindings for editing text in OS X are defined in <code>/System/Library/Frameworks/AppKit.framework/Resources/StandardKeyBinding.dict</code>. You can add custom keybindings by saving a property list like the one below as <code>~/Library/KeyBindings/DefaultKeyBinding.dict</code>. Quit and reopen applications to apply changes to <code>DefaultKeyBinding.dict</code>.</p>
+<h2>My DefaultKeyBinding.dict</h2>
+<pre><code>{
+  &quot;~w&quot; = selectWord:;
+  &quot;~j&quot; = (selectWord:, cut:);
+  &quot;~g&quot; = (selectWord:, copy:);
+  &quot;~h&quot; = (selectWord:, paste:);
+
+  &quot;~l&quot; = selectParagraph:;
+  &quot;~z&quot; = (selectParagraph:, deleteBackward:);
+  &quot;~x&quot; = (selectParagraph:, cut:);
+  &quot;~c&quot; = (selectParagraph:, copy:);
+
+  &quot;~s&quot; = (moveToBeginningOfParagraphAndModifySelection:, moveToEndOfParagraphAndModifySelection:);
+  &quot;~y&quot; = (moveToBeginningOfParagraphAndModifySelection:, moveToEndOfParagraphAndModifySelection:, deleteBackward:);
+  &quot;~q&quot; = (moveToBeginningOfParagraphAndModifySelection:, moveToEndOfParagraphAndModifySelection:, cut:);
+  &quot;~m&quot; = (moveToBeginningOfParagraphAndModifySelection:, moveToEndOfParagraphAndModifySelection:, copy:);
+
+  &quot;~a&quot; = (moveToBeginningOfParagraphAndModifySelection:, copy:);
+  &quot;~r&quot; = (moveToEndOfParagraphAndModifySelection:, copy:);
+  &quot;~t&quot; = (moveToBeginningOfParagraphAndModifySelection:, cut:);
+  &quot;~k&quot; = (moveToEndOfParagraphAndModifySelection:, cut:);
+
+  &quot;~v&quot; = (delete:, setMark:, paste:, selectToMark:);
+
+  &quot;~d&quot; = (setMark:, moveToBeginningOfParagraphAndModifySelection:, moveToEndOfParagraphAndModifySelection:, delete:, yank:, insertNewlineIgnoringFieldEditor:, yank:, swapWithMark:);
+
+  &quot;~-&quot; = lowercaseWord:;
+  &quot;~=&quot; = uppercaseWord:;
+  &quot;~.&quot; = capitalizeWord:;
+
+  &quot;@\r&quot; = (moveToEndOfParagraph:, insertNewlineIgnoringFieldEditor:, deleteToBeginningOfParagraph:);
+  &quot;$\r&quot; = (moveToBeginningOfParagraph:, insertNewlineIgnoringFieldEditor:, moveBackward:);
+
+  &quot;~\Uf700&quot; = (moveUp:, moveUp:, moveUp:, moveUp:, moveUp:, moveUp:, moveUp, moveUp);
+  &quot;~\Uf701&quot; = (moveDown:, moveDown:, moveDown:, moveDown:, moveDown:, moveDown:, moveDown, moveDown);
+  &quot;~$\Uf700&quot; = (moveUpAndModifySelection:, moveUpAndModifySelection:, moveUpAndModifySelection:, moveUpAndModifySelection:, moveUpAndModifySelection:, moveUpAndModifySelection:, moveUpAndModifySelection, moveUpAndModifySelection);
+  &quot;~$\Uf701&quot; = (moveDownAndModifySelection:, moveDownAndModifySelection:, moveDownAndModifySelection:, moveDownAndModifySelection:, moveDownAndModifySelection:, moveDownAndModifySelection:, moveDownAndModifySelection, moveDownAndModifySelection);
+
+  &quot;^~\Uf700&quot; = (selectParagraph:, setMark:, deleteToMark:, moveBackward:, moveToBeginningOfParagraph:, setMark:, yank:, moveBackward:, selectToMark:);
+  &quot;^~\Uf701&quot; = (selectParagraph:, setMark:, deleteToMark:, moveToEndOfParagraph:, moveForward:, setMark:, yank:, moveBackward:, selectToMark:);
+
+  &quot;@\Uf728&quot; = deleteToEndOfParagraph:;
+
+  &quot;^,&quot; = moveToBeginningOfDocument:;
+  &quot;^.&quot; = moveToEndOfDocument:;
+  &quot;^$,&quot; = moveToBeginningOfDocumentAndModifySelection:;
+  &quot;^$.&quot; = moveToEndOfDocumentAndModifySelection:;
+  &quot;^~,&quot; = (moveToBeginningOfDocumentAndModifySelection:, deleteBackward);
+  &quot;^~.&quot; = (moveToEndOfDocumentAndModifySelection:, deleteBackward);
+}</code></pre>
+<h2>Notes</h2>
+<p><code>DefaultKeyBinding.dict</code> is ignored by some applications like XCode and Firefox and in some views like in WebKit web inspectors.</p>
+<p>Key combinations that enter dead key states cannot be reassigned. They include option-E, option-I, option-N, option-U, and option-` in the U.S. keyboard layout.</p>
+<p><code>setMark:, selectToMark:</code> makes the methods that modify a selection always expand the selection.</p>
+<p><code>delete:</code> (which is bound to the clear key) does not delete anything when there is no selection. <code>deleteBackward:</code> (which is bound to the delete key) does not add a selection it deletes to the kill ring. <code>deleteBackward:</code> does not add a selection whose length is one character to the kill ring but <code>setMark:, deleteToMark:</code> does.</p>
+<p><code>scrollPageDown:</code> (which is bound to page down key) does not move the caret but <code>pageDown:</code> (which bound to option-page down) does. I have not changed the page down key to <code>pageDown:</code> because the <code>pageDown:</code> method does not do anything in Safari or in other web views.</p>
+<p>To expand a selection so that it starts at the beginning of a hard line and ends at the end of a hard line, you can use <code>moveToBeginningOfParagraphAndModifySelection:, moveToEndOfParagraphAndModifySelection:</code> or <code>selectParagraph:, moveForwardAndModifySelection:, moveBackwardAndModifySelection:, moveBackwardAndModifySelection:, moveToEndOfParagraphAndModifySelection:</code>. When the initial selection ends with a newline, the first option keeps the newline in the selection but the second option does not.</p>
+<p><code>delete:, setMark:, paste:, selectToMark:</code> pastes text and selects the text that is pasted. Without the <code>delete:</code> method the original selection would be kept when the original selection is longer than the text that is pasted.</p>
+<p><code>defaults write -g NSTextKillRingSize -int 100</code> makes <code>yankPop:</code> cycle through previously killed pieces of text.</p>
+<h2>Shortcut strings</h2>
+<pre><code>\t tab
+\n enter
+\r return
+\U001b escape
+\U007f delete
+\Uf700 up
+\Uf701 down
+\Uf702 left
+\Uf703 right
+\Uf704 F1
+\Uf705 F2
+\Uf706 F3
+\Uf707 F4
+\Uf708 F5
+\Uf709 F6
+\Uf70a F7
+\Uf70b F8
+\Uf70c F9
+\Uf70d F10
+\Uf70e F11
+\Uf70f F12
+\Uf710 F13
+\Uf711 F14
+\Uf712 F15
+\Uf713 F16
+\Uf714 F17
+\Uf715 F18
+\Uf716 F19
+\Uf717 F20
+\Uf728 forward delete
+\Uf729 home
+\Uf72b end
+\Uf72c page up
+\Uf72d page down
+\Uf739 clear</code></pre>
+<p><code>^</code> is control, <code>~</code> is option, <code>$</code> is shift, and <code>@</code> is command. <code>#</code> is a modifier for keys on the numpad, so that <code>#1</code> means the numpad 1 key.</p>
+<p>The code points starting from <code>F700</code> are listed in <a href="http://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/CORPCHAR.TXT">http://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/CORPCHAR.TXT</a>.</p>
+<p>In other contexts like in <code>NSUserKeyEquivalents</code> dictionaries, delete is <code>\U0008</code> (<code>\b</code>) and forward delete is <code>\U007f</code>.</p>
+<p>The escape sequences that start with a backslash (like <code>\Uf700</code>) are only supported in the old-style property list syntax. Use escape sequences like <code>&amp;#xf700;</code> in an XML property list.</p>
+<h2>Methods</h2>
+<p><a href="http://www.hcs.harvard.edu/~jrus/site/selectors.html">http://www.hcs.harvard.edu/~jrus/site/selectors.html</a><br> <a href="http://svn.gna.org/svn/gnustep/apps/gorm/tags/Gorm-0_1_0/ClassInformation.plist">http://svn.gna.org/svn/gnustep/apps/gorm/tags/Gorm-0_1_0/ClassInformation.plist</a><br> <a href="https://developer.apple.com/library/mac/documentation/Cocoa/Reference/ApplicationKit/Classes/nsresponder_Class/Reference/Reference.html">NSResponder</a><br> <a href="https://developer.apple.com/library/mac/#documentation/Cocoa/Reference/ApplicationKit/Classes/NSApplication_Class/Reference/Reference.html">NSApplication</a><br> <a href="https://developer.apple.com/library/mac/#documentation/Cocoa/Reference/ApplicationKit/Classes/nsdocument_Class/Reference/Reference.html">NSDocument</a><br> <a href="https://developer.apple.com/library/mac/#documentation/Cocoa/Reference/ApplicationKit/Classes/NSTextView_Class/Reference/Reference.html">NSTextView</a><br> <a href="http://developer.apple.com/library/mac/#documentation/Cocoa/Reference/ApplicationKit/Classes/NSWindow_Class/Reference/Reference.html">NSWindow</a></p>
+<p>The <code>NSResponder</code> class includes these methods:</p>
+<pre><code>capitalizeWord:
+centerSelectionInVisibleArea:
+deleteBackward:
+deleteBackwardByDecomposingPreviousCharacter:
+deleteForward:
+deleteToBeginningOfLine:
+deleteToBeginningOfParagraph:
+deleteToEndOfLine:
+deleteToEndOfParagraph:
+deleteToMark:
+deleteWordBackward:
+deleteWordForward:
+insertBacktab:
+insertDoubleQuoteIgnoringSubstitution:
+insertNewline:
+insertNewlineIgnoringFieldEditor:
+insertSingleQuoteIgnoringSubstitution:
+insertTab:
+insertTabIgnoringFieldEditor:
+insertText:
+lowercaseWord:
+moveBackward:
+moveBackwardAndModifySelection:
+moveDown:
+moveDownAndModifySelection:
+moveForward:
+moveForwardAndModifySelection:
+moveLeft:
+moveLeftAndModifySelection:
+moveParagraphBackwardAndModifySelection:
+moveParagraphForwardAndModifySelection:
+moveRight:
+moveRightAndModifySelection:
+moveToBeginningOfDocument:
+moveToBeginningOfDocumentAndModifySelection:
+moveToBeginningOfLine:
+moveToBeginningOfLineAndModifySelection:
+moveToBeginningOfParagraph:
+moveToBeginningOfParagraphAndModifySelection:
+moveToEndOfDocument:
+moveToEndOfDocumentAndModifySelection:
+moveToEndOfLine:
+moveToEndOfLineAndModifySelection:
+moveToEndOfParagraph:
+moveToEndOfParagraphAndModifySelection:
+moveToLeftEndOfLine:
+moveToLeftEndOfLineAndModifySelection:
+moveToRightEndOfLine:
+moveToRightEndOfLineAndModifySelection:
+moveUp:
+moveUpAndModifySelection:
+moveWordBackward:
+moveWordBackwardAndModifySelection:
+moveWordForward:
+moveWordForwardAndModifySelection:
+moveWordLeft:
+moveWordLeftAndModifySelection:
+moveWordRight:
+moveWordRightAndModifySelection:
+pageDown:
+pageDownAndModifySelection:
+pageUp:
+pageUpAndModifySelection:
+scrollLineDown:
+scrollLineUp:
+scrollPageDown:
+scrollPageUp:
+scrollToBeginningOfDocument:
+scrollToEndOfDocument:
+selectAll:
+selectLine:
+selectParagraph:
+selectToMark:
+selectWord:
+setMark:
+swapWithMark:
+transpose:
+uppercaseWord:
+yank:</code></pre>
+<p>These methods are included in classes other than <code>NSResponder</code>:</p>
+<pre><code>copy:
+cut:
+delete:
+paste:
+pasteAsPlainText:
+redo:
+undo:
+yankAndSelect:</code></pre>
+<h2>Emacs keybindings</h2>
+<pre><code>{
+  &quot;^ &quot; = setMark:;
+  &quot;^/&quot; = undo:;
+  &quot;^w&quot; = deleteToMark:;
+  &quot;^x&quot; = {
+    &quot;^x&quot; = swapWithMark:;
+    &quot;^m&quot; = selectToMark:;
+  };
+  &quot;^V&quot; = pageDownAndModifySelection:;
+  &quot;~@&quot; = selectWord:;
+  &quot;~b&quot; = moveWordBackward:;
+  &quot;~c&quot; = (capitalizeWord:, moveForward:, moveForward:);
+  &quot;~d&quot; = deleteWordForward:;
+  &quot;~f&quot; = moveWordForward:;
+  &quot;~l&quot; = (lowercaseWord:, moveForward:, moveForward:);
+  &quot;~u&quot; = (uppercaseWord:, moveForward:, moveForward:);
+  &quot;~v&quot; = pageUp:;
+  &quot;~y&quot; = yankPop:;
+  &quot;~w&quot; = (deleteToMark:, setMark:, yank:, swapWithMark:);
+  &quot;~B&quot; = moveWordBackwardAndModifySelection:;
+  &quot;~F&quot; = moveWordForwardAndModifySelection:;
+  &quot;~V&quot; = pageUpAndModifySelection:;
+}</code></pre>
+<p><a href="http://www.hcs.harvard.edu/~jrus/site/KeyBindings/Emacs%20Opt%20Bindings.dict">http://www.hcs.harvard.edu/~jrus/site/KeyBindings/Emacs%20Opt%20Bindings.dict</a> includes a few more keybindings, but for example <code>transposeWords:</code> does not work in most applications, <code>openDocument:</code> and <code>saveDocument:</code> do not work in applications that use auto-save, and <code>performClose:</code> does not work everywhere either.</p>
+<h2>StandardKeyBinding.dict</h2>
+<pre><code>$ plutil -convert xml1 /System/Library/Frameworks/AppKit.framework/Resources/StandardKeyBinding.dict -o -|pl|grep -v noop:|ruby -pe&#39;$_.gsub!(/[^ -~\n]/){&quot;\\U%04x&quot;%$&amp;.ord}&#39;
+{
+    &quot;\U0003&quot; = &quot;insertNewline:&quot;;
+    &quot;\b&quot; = &quot;deleteBackward:&quot;;
+    &quot;\t&quot; = &quot;insertTab:&quot;;
+    &quot;\n&quot; = &quot;insertNewline:&quot;;
+    &quot;\U000d&quot; = &quot;insertNewline:&quot;;
+    &quot;\U0019&quot; = &quot;insertBacktab:&quot;;
+    &quot;\U001b&quot; = &quot;cancelOperation:&quot;;
+    &quot;$\Uf700&quot; = &quot;moveUpAndModifySelection:&quot;;
+    &quot;$\Uf701&quot; = &quot;moveDownAndModifySelection:&quot;;
+    &quot;$\Uf702&quot; = &quot;moveLeftAndModifySelection:&quot;;
+    &quot;$\Uf703&quot; = &quot;moveRightAndModifySelection:&quot;;
+    &quot;$\Uf729&quot; = &quot;moveToBeginningOfDocumentAndModifySelection:&quot;;
+    &quot;$\Uf72b&quot; = &quot;moveToEndOfDocumentAndModifySelection:&quot;;
+    &quot;$\Uf72c&quot; = &quot;pageUpAndModifySelection:&quot;;
+    &quot;$\Uf72d&quot; = &quot;pageDownAndModifySelection:&quot;;
+    &quot;@ &quot; = &quot;cycleToNextInputScript:&quot;;
+    &quot;@$\Uf700&quot; = &quot;moveToBeginningOfDocumentAndModifySelection:&quot;;
+    &quot;@$\Uf701&quot; = &quot;moveToEndOfDocumentAndModifySelection:&quot;;
+    &quot;@$\Uf702&quot; = &quot;moveToLeftEndOfLineAndModifySelection:&quot;;
+    &quot;@$\Uf703&quot; = &quot;moveToRightEndOfLineAndModifySelection:&quot;;
+    &quot;@.&quot; = &quot;cancelOperation:&quot;;
+    &quot;@^ &quot; = &quot;togglePlatformInputSystem:&quot;;
+    &quot;@^\Uf701&quot; = &quot;makeBaseWritingDirectionNatural:&quot;;
+    &quot;@^\Uf702&quot; = &quot;makeBaseWritingDirectionRightToLeft:&quot;;
+    &quot;@^\Uf703&quot; = &quot;makeBaseWritingDirectionLeftToRight:&quot;;
+    &quot;@~ &quot; = &quot;cycleToNextInputKeyboardLayout:&quot;;
+    &quot;@~^\Uf701&quot; = &quot;makeTextWritingDirectionNatural:&quot;;
+    &quot;@~^\Uf702&quot; = &quot;makeTextWritingDirectionRightToLeft:&quot;;
+    &quot;@~^\Uf703&quot; = &quot;makeTextWritingDirectionLeftToRight:&quot;;
+    &quot;@\U007f&quot; = &quot;deleteToBeginningOfLine:&quot;;
+    &quot;@\Uf700&quot; = &quot;moveToBeginningOfDocument:&quot;;
+    &quot;@\Uf701&quot; = &quot;moveToEndOfDocument:&quot;;
+    &quot;@\Uf702&quot; = &quot;moveToLeftEndOfLine:&quot;;
+    &quot;@\Uf703&quot; = &quot;moveToRightEndOfLine:&quot;;
+    &quot;^\U0003&quot; = &quot;insertLineBreak:&quot;;
+    &quot;^\t&quot; = &quot;selectNextKeyView:&quot;;
+    &quot;^\n&quot; = &quot;insertLineBreak:&quot;;
+    &quot;^\U000d&quot; = &quot;insertLineBreak:&quot;;
+    &quot;^\U0019&quot; = &quot;selectPreviousKeyView:&quot;;
+    &quot;^\&quot;&quot; = &quot;insertDoubleQuoteIgnoringSubstitution:&quot;;
+    &quot;^$\Uf702&quot; = &quot;moveToLeftEndOfLineAndModifySelection:&quot;;
+    &quot;^$\Uf703&quot; = &quot;moveToRightEndOfLineAndModifySelection:&quot;;
+    &quot;^&#39;&quot; = &quot;insertSingleQuoteIgnoringSubstitution:&quot;;
+    &quot;^/&quot; = &quot;insertRightToLeftSlash:&quot;;
+    &quot;^A&quot; = &quot;moveToBeginningOfParagraphAndModifySelection:&quot;;
+    &quot;^B&quot; = &quot;moveBackwardAndModifySelection:&quot;;
+    &quot;^E&quot; = &quot;moveToEndOfParagraphAndModifySelection:&quot;;
+    &quot;^F&quot; = &quot;moveForwardAndModifySelection:&quot;;
+    &quot;^N&quot; = &quot;moveDownAndModifySelection:&quot;;
+    &quot;^P&quot; = &quot;moveUpAndModifySelection:&quot;;
+    &quot;^V&quot; = &quot;pageDownAndModifySelection:&quot;;
+    &quot;^a&quot; = &quot;moveToBeginningOfParagraph:&quot;;
+    &quot;^b&quot; = &quot;moveBackward:&quot;;
+    &quot;^d&quot; = &quot;deleteForward:&quot;;
+    &quot;^e&quot; = &quot;moveToEndOfParagraph:&quot;;
+    &quot;^f&quot; = &quot;moveForward:&quot;;
+    &quot;^h&quot; = &quot;deleteBackward:&quot;;
+    &quot;^k&quot; = &quot;deleteToEndOfParagraph:&quot;;
+    &quot;^l&quot; = &quot;centerSelectionInVisibleArea:&quot;;
+    &quot;^n&quot; = &quot;moveDown:&quot;;
+    &quot;^o&quot; =     (
+        &quot;insertNewlineIgnoringFieldEditor:&quot;,
+        &quot;moveBackward:&quot;
+    );
+    &quot;^p&quot; = &quot;moveUp:&quot;;
+    &quot;^t&quot; = &quot;transpose:&quot;;
+    &quot;^v&quot; = &quot;pageDown:&quot;;
+    &quot;^y&quot; = &quot;yank:&quot;;
+    &quot;^~\U007f&quot; = &quot;deleteWordBackward:&quot;;
+    &quot;^\U007f&quot; = &quot;deleteBackwardByDecomposingPreviousCharacter:&quot;;
+    &quot;^\Uf700&quot; = &quot;scrollPageUp:&quot;;
+    &quot;^\Uf701&quot; = &quot;scrollPageDown:&quot;;
+    &quot;^\Uf702&quot; = &quot;moveToLeftEndOfLine:&quot;;
+    &quot;^\Uf703&quot; = &quot;moveToRightEndOfLine:&quot;;
+    &quot;~\U0003&quot; = &quot;insertNewlineIgnoringFieldEditor:&quot;;
+    &quot;~\b&quot; = &quot;deleteWordBackward:&quot;;
+    &quot;~\t&quot; = &quot;insertTabIgnoringFieldEditor:&quot;;
+    &quot;~\n&quot; = &quot;insertNewlineIgnoringFieldEditor:&quot;;
+    &quot;~\U000d&quot; = &quot;insertNewlineIgnoringFieldEditor:&quot;;
+    &quot;~\U001b&quot; = &quot;complete:&quot;;
+    &quot;~$\Uf700&quot; = &quot;moveParagraphBackwardAndModifySelection:&quot;;
+    &quot;~$\Uf701&quot; = &quot;moveParagraphForwardAndModifySelection:&quot;;
+    &quot;~$\Uf702&quot; = &quot;moveWordLeftAndModifySelection:&quot;;
+    &quot;~$\Uf703&quot; = &quot;moveWordRightAndModifySelection:&quot;;
+    &quot;~^B&quot; = &quot;moveWordBackwardAndModifySelection:&quot;;
+    &quot;~^F&quot; = &quot;moveWordForwardAndModifySelection:&quot;;
+    &quot;~^b&quot; = &quot;moveWordBackward:&quot;;
+    &quot;~^f&quot; = &quot;moveWordForward:&quot;;
+    &quot;~\U007f&quot; = &quot;deleteWordBackward:&quot;;
+    &quot;~\Uf700&quot; =     (
+        &quot;moveBackward:&quot;,
+        &quot;moveToBeginningOfParagraph:&quot;
+    );
+    &quot;~\Uf701&quot; =     (
+        &quot;moveForward:&quot;,
+        &quot;moveToEndOfParagraph:&quot;
+    );
+    &quot;~\Uf702&quot; = &quot;moveWordLeft:&quot;;
+    &quot;~\Uf703&quot; = &quot;moveWordRight:&quot;;
+    &quot;~\Uf728&quot; = &quot;deleteWordForward:&quot;;
+    &quot;~\Uf72c&quot; = &quot;pageUp:&quot;;
+    &quot;~\Uf72d&quot; = &quot;pageDown:&quot;;
+    &quot;\U007f&quot; = &quot;deleteBackward:&quot;;
+    &quot;\Uf700&quot; = &quot;moveUp:&quot;;
+    &quot;\Uf701&quot; = &quot;moveDown:&quot;;
+    &quot;\Uf702&quot; = &quot;moveLeft:&quot;;
+    &quot;\Uf703&quot; = &quot;moveRight:&quot;;
+    &quot;\Uf708&quot; = &quot;complete:&quot;;
+    &quot;\Uf728&quot; = &quot;deleteForward:&quot;;
+    &quot;\Uf729&quot; = &quot;scrollToBeginningOfDocument:&quot;;
+    &quot;\Uf72b&quot; = &quot;scrollToEndOfDocument:&quot;;
+    &quot;\Uf72c&quot; = &quot;scrollPageUp:&quot;;
+    &quot;\Uf72d&quot; = &quot;scrollPageDown:&quot;;
+    &quot;\Uf739&quot; = &quot;delete:&quot;;
+}</code></pre>
+<h2>See also</h2>
+<p><a href="http://www.hcs.harvard.edu/~jrus/site/cocoa-text.html">http://www.hcs.harvard.edu/~jrus/site/cocoa-text.html</a><br> <a href="http://www.hcs.harvard.edu/~jrus/site/">http://www.hcs.harvard.edu/~jrus/site/</a><br> <a href="https://developer.apple.com/library/mac/documentation/cocoa/conceptual/eventoverview/TextDefaultsBindings/TextDefaultsBindings.html">https://developer.apple.com/library/mac/documentation/cocoa/conceptual/eventoverview/TextDefaultsBindings/TextDefaultsBindings.html</a><br> <a href="https://github.com/ttscoff/KeyBindings/blob/master/DefaultKeyBinding.dict">https://github.com/ttscoff/KeyBindings/blob/master/DefaultKeyBinding.dict</a></p>

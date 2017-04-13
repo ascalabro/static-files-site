@@ -1,0 +1,385 @@
+#AppleFontSmoothing
+you can make OS X use a lighter text rendering style by running `defaults write -g AppleFontSmoothing -int 1` and either logging out and back in or quitting and reopening applications
+1 corresponds to the "Light" setting that was included in System Preferences in 10.5 and earlier, 3 corresponds to "Strong", 0 corresponds to "Standard - Best for CRT", and 2 corresponds to "Medium - Best for Flat Panel"
+0 corresponds to disabling LCD font smoothing (subpixel rendering) from System Preferences and 2 corresponds to enabling LCD font smoothing
+
+#cron
+the crontab format is described in `man 5 crontab`
+cron adds a message to /var/mail/ when a command has STDOUT or STDERR output
+you can disable the mail messages by adding MAILTO="" to the start of a crontab or by redirecting the STDOUT and STDERR of commands
+`sudo rm /var/mail/$USER` removes existing mail messages
+the default path is /usr/bin:/bin, but you can change it by adding a line like PATH=/usr/local/bin:~/bin:/usr/bin:/bin:/usr/sbin:/sbin to a crontab
+the default shell is /bin/sh, but you can change it by adding adding a line like SHELL=/usr/local/bin/bash to a crontab
+locale variables are unset by default for commands ran by cron, but you can change the locale by adding a line like LANG=en_US.UTF-8 to the start of a crontab
+the root user has its own crontab which can be edited with `sudo crontab -e`
+% has to be escaped as \% in the command field but \ does not have to be escaped as \\ unless it precedes %
+@hourly is equivalent to `0 * * * *` and @daily is equivalent to `0 0 * * *`
+at least in OS X, @reboot runs a command after restarting but not after logging out and back in
+/etc/crontab uses a different format where the sixth field contains a username, like `* * * * * username command`
+the files of crontabs are stored in /var/at/tabs/
+/usr/lib/cron is a symlink to /var/at
+/System/Library/LaunchDaemons/com.vix.cron.plist has /usr/lib/cron/tabs in QueueDirectories
+`sudo tee -a /etc/syslog.conf<<<'cron.* /var/log/cron.log';f=/System/Library/LaunchDaemons/com.apple.syslogd.plist;launchctl unload $f;launchctl load $f` enables logging
+
+#path_helper, /etc/paths, and /etc/paths.d/
+/usr/libexec/path_helper adds lines in /etc/paths and /etc/paths.d/* to the path
+path_helper is ran from /etc/profile, /etc/zsh.env, and /etc/csh.login
+zsh reads /etc/zsh.env even for non-login shells but bash does not read /etc/profile for non-login shells
+path_helper is not ran by graphical applications like Xcode, Script Editor, or Emacs.app
+/etc/paths contains /usr/local/bin at the end by default
+there are no files in /etc/paths.d/ by default, but for example the installers for XQuartz, MacTeX, and ImageMagick add files to /etc/paths.d/
+
+#erasing an SSD securely
+the option to erase a disk securely in Disk Utility has been disabled for SSDs since 10.7
+according to a knowledge base article by Apple, erasing an SSD normally is secure enough and makes it difficult to recover data
+it is still possible to run something like `diskutil secureErase 4 disk0s2` from Terminal on the recovery partition, but I do not know if that is more secure than erasing an SSD normally
+another way to potentially erase an SSD securely is to turn on FileVault 2 before erasing the drive, but enabling encryption after an SSD has already been used is not necessarily secure either
+
+#Internet Recovery mode
+Internet Recovery mode is supported by all Macs that came with 10.7 or later and by some older Macs after a firmware update
+in Internet Recovery the Mac downloads a disk image for the recovery system from Apple's servers and then starts up from the disk image
+Internet Recovery mode can be used to install OS X on an empty drive after a drive is replaced or after a drive has been erased so that even the recovery partition is erased
+option-command-R forces starting up in Internet Recovery mode
+
+#startup keys
+command-R starts from the recovery system
+command-S starts up in single user mode
+command-V starts up in verbose mode
+shift starts up in safe mode
+option opens Startup Manager
+C starts up from an optical disk
+D opens Apple Diagnostics or Apple Hardware Test
+T starts up in target disk mode
+holding P and R while holding option and command resets NVRAM or PRAM
+holding eject or F12 or pressing a button on a pointing device ejects removable media like optical disks
+option-command-R starts up in Internet Recovery mode
+
+#resource forks
+resource forks are not stored as extended attributes even though they can be accessed and modified through the extended attribute interface
+`cat file/..namedfork/rsrc` or `xattr -p com.apple.ResourceFork file` shows the contents of a resource fork
+`cat file/rsrc` stopped working in 10.7
+`xattr -d com.apple.ResourceFork file` removes the resource fork of a file
+`find . -type f -xattrname com.apple.ResourceFork` finds files that have a resource fork
+resource forks are used to store information about aliases, custom icons set in Finder, the images of Icon\r files, file-specific default applications, and information in scpt files
+the information in an alias file is stored in the resource fork and the data fork is empty, so that if the resource fork of an alias file is removed, the alias stops working
+scpt files have resource forks that are used to store script objects, Script Editor window state, and the RTF descriptions of scripts
+
+#AppleDouble files
+AppleDouble files are used to store extended attributes, resource forks, ACLs, and file flags on non-HFS+ volumes and in archives
+Archive Utility and /usr/bin/tar create AppleDouble files but /usr/bin/zip does not
+zip archives created with Archive Utility include a __MACOSX directory for AppleDouble files
+`COPYFILE_DISABLE= tar -cf folder.tar folder` creates a tar archive without AppleDouble files
+`zip folder.zip -r folder` creates a zip archive without AppleDouble files
+`ditto -c -k --sequesterRsrc --keepParent folder folder.zip` creates a zip archive that includes AppleDouble files
+`ditto -x -k dir.zip` extracts a zip archive and convert metadata stored in AppleDouble files back to native formats
+`find . -name ._\* -delete` deletes AppleDouble files
+`dot_clean .` deletes AppleDouble files after converting the metadata stored in them to native formats
+
+#Spotlight comments
+a Spotlight comment added from Finder is usually stored both as an extended attribute and in a .DS_Store file
+when a Spotlight comment is added from Finder for a file there is no write permission to, the Spotlight comment is not saved as an external attribute
+a Spotlight comment that is not stored as an extended attribute is not indexed by Spotlight, even though it is shown by Finder if it is still stored in a .DS_Store file
+if the .DS_Store file of a folder is deleted, the Spotlight comments of files in the folder are still indexed by Spotlight if they are also stored as extended attributes, but they are not shown by Finder
+
+#default view modes and view options in Finder
+the view mode that is used for new Finder windows is the view mode of the previously closed Finder window
+I do not know any way to change the default view mode in Finder permanently
+the "Always open in ... view" checkbox enables using a folder-specific default view mode for a folder which is saved in a .DS_Store file and which is changed every time the view mode of the folder is changed
+if you check "Always open in column view" and change the view mode of a folder to icon view, the folder-specific default view mode saved in the .DS_Store file becomes icon view
+the "Use as Defaults" button changes some of the settings in ~/Library/Preferences/com.apple.Finder.plist
+the settings saved with "Use as Defaults" are not used for folders that have folder-specific settings saved in a .DS_Store file
+there is no "Use as Defaults" button in column view because the settings in the two bottom sections of the view options panel are the same for all folders in column view
+
+#HFS compression
+support for HFS compression was added in 10.6
+HFS compression is enabled for many of the files that are installed with OS X
+`sudo ls -lO /var/db/dslocal/nodes/Default/users` shows that HFS compression is used for most of the default user accounts
+most command line utilities and graphical applications display the uncompressed sizes of files, but you can see the compressed size of a file with `sudo fileXray --diskusage`
+when a file is compressed, the data is stored in the resource fork and the data fork is empty
+compressed files have a com.apple.decmpfs extended attribute that is not shown by xattr
+`ditto --hfsCompression file1 file2` makes a compressed copy of file1 to file2
+when file1 is compressed, `cp file1 file2` or `ditto --nopreserveHFSCompression file1 file2` makes a non-compressed copy of it as file2
+`stat -f%f` prints 32 if a file is compressed and has no other file flags
+`ls -lO` displays `compressed` if a file is compressed
+Clusters.app can be used to enable HFS compression for user files
+
+#folder actions
+a folder action can be an AppleScript with an `adding folder items` handler or an Automator workflow created using the Folder Action template
+Folder Actions Setup only allows selecting scripts and workflows in `~/Library/Workflows/Applications/Folder Actions/`
+Folder Actions Setup modifies com.apple.FolderActions.enabled.plist and com.apple.FolderActions.folders.plist in ~/Library/LaunchAgents/
+the com.apple.FolderActions.folders job gets throttled if a folder with folder actions is modified within 10 seconds from the last invocation of the job
+there are some example scripts in `/Library/Scripts/Folder Action Scripts/`
+folder actions were reimplemented so that they use launchd in 10.5 and support for creating folder actions with Automator was added in 10.6
+
+#using an OS X VM with VMware Fusion
+you can create a VM from an OS X installer application downloaded from App Store
+if you download a torrent for a version of OS X that is not available from App Store, just download an unmodified OS X installer application or disk image and not a modified ISO or VM image meant for PCs
+installing VMware Tools adds support for other resolutions than the default resolution and for copy and paste between the guest and host
+to restore the VM to the initial state later, take a snapshot before you start using the VM or after you install VMware Tools
+to copy files between a VM and the host, add a shared folder from "Virtual Machine > Settings > Sharing"
+
+#resampling filters for resizing images
+sips and Automator use a method for resizing images that often makes images look blurry when images are downscaled
+Preview used the same resizing method as sips and Automator in 10.7 and earlier but it was changed in 10.8
+you can use a command like `convert input.png -filter lanczos2 -resize 500x output.png` to resize an image with ImageMagick in a way that does not require additional sharpening
+the lanczos2 filter in ImageMagick is almost identical to the catrom filter and it is also similar to the bicubic option Adobe CS applications
+
+#X11 font metadata files
+X11 applications save font metadata files that are described in `man mkfontdir` to directories that contain fonts such as ~/Library/Fonts/
+the files are not needed by normal OS X applications, and if they are deleted, they are recreated by X11 applications
+`find ~/Library/Fonts \( -name fonts.dir -o -name encodings.dir -o -name fonts.list -o -name fonts.scale \) -delete` deletes the X11 font metadata files in ~/Library/Fonts
+
+#disabling the notifications about new updates in 10.8 and later
+you can disable the notifications about updates to OS X and App Store applications by unchecking "Automatically check for updates" from the App Store preference pane
+unchecking only "Download newly available updates in the background" does not disable the notifications
+if you disable automatic updates, you can install updates to OS X and App Store applications manually from App Store
+`softwareupdate -ia` does not include updates for App Store applications and it can cause applications to crash if you do not restart after an OS X update
+
+#EFI partition
+the EFI partition is formatted as FAT and its size is about 200 MB
+the EFI partition is initially blank and it is not used for booting, but it is used as a staging area for firmware updates
+if the EFI partition is removed, the system starts up normally and Startup Manager still works, but firmware updates fail
+`mkdir /tmp/efi;sudo mount -t msdos /dev/disk0s1 /tmp/efi` mounts the EFI partition
+
+#.CFUserTextEncoding
+if ~/.CFUserTextEncoding contains 0x0:0x0, the default encoding is MacRoman and the default language is U.S. English
+CFStringBuiltInEncodings in CFString.h contains the values used for the encoding
+if the primary language is changed to Japanese from System Preferences, the contents of ~/.CFUserTextEncoding become 0x1:0xE
+`printf 0x08000100:0 >~/.CFUserTextEncoding` changes the default encoding to UTF-8, but that has few benefits and has at least in the past caused problems with Adobe CS applications
+
+#changes in 10.9
+Network Utility.app was moved from /Applications/Utilities/ to /System/Library/CoreServices/
+a password dialog is shown when using gdb
+the wallpapers that were previously inside ScreenSaver.framework were moved to `/Library/Screen Savers/Default Collections/`
+a short press of a power button or a power key puts a Mac to sleep instead of displaying the dialog shown when pressing control-eject
+the view options panel for the home folder has a checkbox for showing the library folder in Finder
+Safari supports opening PSD files
+the Security preference pane has a list of applications that were blocked because they were from an unidentified developer
+the option to disable antialiasing for small font sizes was removed from the General preference pane
+Software Update was renamed to App Store, Mail, Contacts & Calendars was renamed to Internet Accounts, and Language & Text was renamed to Language & Region
+the Parental Controls preference pane has an option to disable built-in cameras
+the Accessibility preference pane has sections for captions and switch control
+AppleScript and Automator support displaying notifications
+Automator workflows can be saved as speakable items
+Safari preloads the top hit selected on the location bar
+the settings for desktop pictures are stored in `~/Library/Application Support/Dock/desktoppicture.db` instead of ~/Library/Preferences/com.apple.desktop.plist
+the Apple menu has a Location menu
+there are new AVKit, GameController, MapKit, MediaAccessibility, MediaLibrary, and SpriteKit frameworks
+the QuickTime, QTKit, and Instant Message frameworks were deprecated
+the Message and ServerNotification frameworks were removed
+/usr/bin/ruby is ruby 2.0 instead of 1.8.7
+/usr/bin/gnutar was removed
+the purge command requires superuser priviliges
+there is a new Install Command Line Developer Tools application which is opened if for example cc is ran on a new installation
+Setup Assistant has an option to require a password to unlock the screen that is enabled by default
+systemsetup requires superuser privileges
+
+#new command line utilities in 10.9
+powermetrics shows for example CPU package energy use and processes sorted by a weighted average of package idle wakeups and CPU use
+systemstats shows for example periods with high CPU use in the past few days and most frequently launched processes
+lsappinfo can be used to launch applications, to show information about running applications, and to change the properties of applications
+footprint shows memory usage information
+taskpolicy executes a program with altered I/O or scheduling policy
+wdutil is a command line alternative to Wireless Diagnostics.app
+
+#cached preferences in 10.9
+when a property list file is edited directly or replaced with another property list file, quitting and reopening an application no longer applies the changes in 10.9
+to apply changes to a property list file, run either `defaults read file.plist` or `killall cfprefsd` before quitting an reopening an application
+for example `mv /tmp/com.apple.finder.plist ~/Library/Preferences;defaults read com.apple.finder;killall Finder` makes Finder use the settings in the new property list file
+when a property list file is edited with defaults and not directly, just quitting and reopening an application still applies the changes
+
+#spelling dictionary files
+~/Library/Spelling/LocalDictionary applies to all languages, ~/Library/Spelling/en applies to U.S. English, and ~/Library/Spelling/en_GB applies to British English
+when you press the button for learning a word in a spelling panel, the learned word is added to ~/Library/Spelling/LocalDictionary when the spelling language is set to automatic
+if you edit the files in ~/Library/Spelling/ directly, you can apply the changes by running `killall AppleSpell`
+
+#.bash_profile and .bashrc
+Terminal and iTerm 2 open new shells as login shells by default by executing a command like `login -pf $USER`, which makes bash read .bash_profile but not .bashrc
+the terminal applications on other platforms often open new shells as non-login shells, which makes bash read .bashrc but not .bash_profile
+tmux and the shell mode in Emacs open new shells as non-login shells by default, but when you ssh to an OS X installation, bash is invoked as a login shell by default
+if you use ~/.bash_profile as your bash configuration file, you can run `echo '. ~/.bash_profile'>~/.bashrc` to make bash read ~/.bash_profile when bash is invoked as a non-login shell, and vice versa
+
+#Time Machine
+the "Restore Time Machine Backup" option on the recovery partition only allows restoring a backup made with the current Mac, but you can use Migration Assistant to restore a backup made with another Mac
+Time Machine cannot back up Boot Camp or Windows partitions
+the data for backups is stored in /Volumes/Data/*.sparsebundle/bands/ on network drives such as Time Capsules
+Time Machine cannot back up network drives, which includes USB drives connected to a Time Capsule
+when Time Machine inherits a backup, the computer name and the name of the startup disk are changed on the backup disk
+since 10.7.2, backups saved on an external non-network drive have included a copy of the recovery partition which has a name like "Recovery 10-9" in Startup Manager
+Time Machine sparse bundles can be read on Linux by using sparsebundlefs and tmfs
+files on backups have extended attributes like com.apple.metadata:_kTimeMachineNewestSnapshot that are removed by `tmutil restore` and when the files are copied from Finder but not when the files are copied with cp
+if `tmutil startbackup` results in a "Backup Disk Not Available" notification when you attempt to back up to a Time Capsule, try to turn the network connection off and back on from System Preferences
+
+#local Time Machine snapshots
+local snapshots were introduced in 10.7
+local snapshots are enabled by default on laptops but not on desktop Macs
+`sudo tmutil enablelocal` enables local snapshots, `sudo tmutil disablelocal` disables local snapshots, and `tmutil snapshot` saves a local snapshot
+when Time Machine is turned off and back on, local snapshots get enabled on laptops and disabled on desktop Macs regardless of the previous setting
+the files of local snapshots are stored in /.MobileBackups/ and in /Volumes/*/.MobileBackups/
+/Volumes/MobileBackups/ is an mtmfs filesystem
+the files in a local snapshot are not copied to a backup volume when a backup volume becomes available
+10.9 keeps daily local snapshots for a week and a single additional weekly local snapshot, but 10.7 and 10.8 keep hourly local snapshots for a day and daily local snapshots for a week
+local snapshots are not counted as used disk space in Finder but they are shown under backups in the About This Mac window
+in 10.9 all local snapshots except the newest one are deleted if free disk space falls below 10%, but in 10.7 and 10.8 all local snapshots are deleted if free disk space falls below 20%
+
+#/etc/bashrc
+/etc/bashrc is not a startup file that is read directly by bash but it is sourced from /etc/profile in OS X
+bash normally reads /etc/profile when invoked as a login shell but not when invoked as a non-login shell
+in OS X /etc/bashrc includes `shopt -s checkwinsize` and a function that is used by Terminal to track the current directory
+
+#changes in 10.10
+CryptoTokenKit.framework provides support for smart cards
+MultipeerConnetivity.framework allows cross-platform connections between OS X and iOS devices
+Hypervisor.framework allows OS X to be virtualized without needing a kernel extension
+NotificationCenter.framework enables creating Today extensions
+FinderSync.framework provides support for Finder extensions
+Safari supports WebGL, IndexedDB, JavaScript promises, CSS shapes and decompositing, SPDY, and HTML5 premium video
+WebKit uses the LLVM-based FTL (Fourth Tier LLVM) JIT compiler for JavaScript
+RubyCocoa was removed
+the root and per-user launchd processes have been replaced with a single launchd process
+/etc/launchd.conf is no longer supported
+logout hooks and login hooks no longer work
+SystemStarter was removed and /etc/rc.local and /etc/rc.shutdown.local are no longer supported
+when an Apple ID is entered in Setup Assistant, there is an option to link the OS X and Apple ID passwords that is enabled by default
+file dialogs support moving files to trash and moving, copying, and renaming files
+Safari has a new setting to allow cookies from the current website only
+ipfw has been removed after being deprecated in favor of pfctl in 10.9
+OS X comes with AppleMobileFileIntegrity.kext and /usr/libexec/amfid
+Preview does not use LCD font smoothing (subpixel rendering) for PDF views even when LCD font smoothing is enabled from System Preferences, but the PDF views in other places like Safari still do
+
+#using iTerm 2 in full screen
+you can make iTerm 2 use custom full screen windows that do not have animations and do not use spaces by unchecking the "Native full screen windows" option
+you can make iTerm 2 open in full screen by default by setting "Profiles > Window > Style" to "Fullscreen"
+
+#differences between the mp4, m4a, m4b, m4p, and m4v filename extensions
+the m4a, m4b, m4p, and m4v filename extensions were all introduced by Apple
+the option to remember the previous playback position in iTunes is enabled by default for files with an m4b extension but not for files with an m4a extension
+iTunes displays files with an m4b extension under audiobooks by default
+according to the HandBrake wiki, QuickTime does not support AC3 audio, SRT subtitles, or chapters for files that have the mp4 extension but does for files that have the m4v extension, so that HandBrake uses the m4v extension when it creates an mp4 file that uses one of those features
+m4a has the UTI com.apple.m4a-audio and the parent UTI public.mpeg-4-audio
+m4p and m4b have the UTI com.apple.protected-mpeg-4-audio and the kind of m4b files is shown as "protected MPEG-4 audio" in Finder even though m4b files do not have to be copy-protected
+m4p and m4b do not have public.mpeg-4-audio or com.apple.m4a-audio as parent UTIs
+m4v has the UTI com.apple.m4v-video
+mp4 has the UTI public.mpeg-4 and the parent UTI public.movie
+
+#unsorted
+you can make sudo not require a password by running `sudo visudo` and changing `%admin ALL=(ALL) ALL` to `%admin ALL=(ALL) NOPASSWD: ALL`
+installing gnuplot with `brew install gnuplot --with-x` and installing XQuartz makes gnuplot support displaying the output in an X window
+you can export Notes.app notes as .rtf or .txt from Mail after moving the notes to an IMAP folder on a Gmail account
+the JRE8 installer installs the java binary to `/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home/bin/java`
+`[[rate 200]]` changes the speaking rate to 200 words per minute, `[[slnc 2000]]` pauses for two seconds, and `[[volm 0.5]]` reduces volume
+the default value for TERM is xterm-256color in Terminal and xterm in iTerm 2
+Spotlight does not index files or directories whose name starts with a period
+you can take a screenshot on another Mac by enabling remote login on the other Mac and running `ssh username@other_computers_ip;sudo screencapture a.png`
+App Store downloads in progress are stored in /var/folders/*/*/C/com.apple.appstore/
+modifying the Info.plist of a sandboxed application has caused the application to crash on launch since 10.8
+support for installing a new copy OS X over an existing installation was added in 10.6
+you can import passwords from another installation by dropping ~/Library/Keychains/login.keychain from the other installation to Keychain Access
+AAC+ files downloaded through iTunes Match have the same tags as the original files so iTunes Match cannot be used to fix tags
+if Spotlight indexing always stops at some point, try to delete files shown by `sudo lsof|grep mdworker`
+if App Store shows a message like "You have updates available for other accounts", try to delete the _MASReceipt folders of pirated applications
+if an mdworker process constantly uses about 100% CPU, try to delete mdimporter bundles shown by `sudo lsof|grep mdworker`
+if files are getting deleted immediately instead of being moved to the trash, check if ~/.Trash/ is owned by root
+if an ISO keyboard is treated as an ANSI keyboard, try to delete /Library/Preferences/com.apple.keyboardtype.plist and restart
+special files can have file flags and creation times but not extended attributes or ACLs
+the forks of files with hard links are stored in `/\0\0\0\0HFS+ Private Data/`
+osxfuse does not come with a separate fusermount command and osxfuse volumes can be unmounted with umount instead of `fusermount -u`
+macappstore URLs stopped working in 10.9
+Apple Hardware Test was replaced with Apple Diagnostics in 2013
+the defaults command only works with files that have a .plist extension and it used to require specifying paths without a .plist extension in 10.7 and earlier
+OS X's cp preserves extended attributes, file flags, and resource forks by default even without -p but does not preserve ACLs without -p
+opensource.apple.com lists 69 GPL or LGPL licensed projects for 10.6, 54 for 10.7, and 43 for 10.8
+the EULA of OS X has allowed running OS X VMs on a Mac host since 10.7
+kerning and ligatures are disabled by default in browsers and in most web views
+the button for verifying a disk in Disk Utility performs completely different operations depending on whether a whole disk or a volume on a whole disk is selected
+the loginwindow process sends processes that support sudden termination a KILL signal during logout
+sandboxed applications like TextEdit and Xcode do not allow saving a file when there is write permission to the file but not to the directory the file is in
+the default login shell changed from tcsh to bash in 10.2 and /bin/sh changed from zsh to bash in 10.2
+the fallback store is a local Core Data database that applications can use when the iCloud Core Data database is unavailable
+SK is a prefix for Sprite Kit and SCN is a prefix for Scene Kit
+partitions encrypted with FileVault 2 cannot be resized with Disk Utility or diskutil
+the Local Items keychain is replaced with an iCloud keychain after iCloud Keychain is enabled
+subpixel rendering is disabled in the web views in the iTunes and App Store applications
+subpixel rendering is not used for elements with a transparent background like the names of icons on the desktop
+OS X installation disks had an Archive and Install option until 10.5
+upgrading OS X replaces files like /etc/apache2/httpd.conf and /etc/sshd_config
+`diskutil info` does not show UUIDs for NTFS or FAT volumes
+/cores/ is used to store core dumps
+Caching Server keeps copies of software updates, applications, and iBooks and iTunes U content
+wdhelper is an XPC helper tool for performing privileged operations for WirelessDiagnosticsSupport.framework
+Apple Color Emoji is a color bitmap font
+CoreText replaced ATSUI in 10.5
+`pmset schedule` adds entries to IOPMQueue
+you can use diskutil in single user mode after loading the launchd plists for configd, diskarbitrationd, diskmanagementd, notifyd, and securityd
+HFS+ was introduced in Mac OS 8 in 1998
+typical HFS+ volumes have no block-special or character-special files because devices reside in the devfs pseudo file system
+OS X uses a Japanese font as a fallback font for displaying Chinese and Japanese characters by default but a Chinese font if Chinese is above Japanese on the list of languages in System Preferences
+EHC is also used for wireless and Bluetooth devices because they are on the USB bus
+iTunes Match uses the MusicID database by Gracenote which is also used by TuneUP
+files created by an application are quarantined if the Info.plist of the application has LSFileQuarantineEnabled set to true
+/var/log/kernel.log was merged into /var/log/system.log in 10.8
+HFS+ and NTFS store modification times in UTC but FAT stores modification times in the local time zone
+PowerPC Macs can only boot from a disk that is partitioned with the APM partitioning scheme
+support for directory hard links was added in 10.5
+the recovery partition is not shown in Startup Manager if FileVault 2 is enabled
+the startup disk that is selected in System Preferences is stored in NVRAM and the volume that is selected with bless is stored in the HFS volume header
+you can erase OS X and install only Windows on a Mac by using Boot Camp Assistant to create a Windows installation partition on an external drive
+FK_StandardViewSettings in .GlobalPreferences.plist is used by FinderKit and file dialogs and StandardViewSettings is used by Finder
+/var/db/systemstats/snapshots.db is used to store data about power usage, performance, and sleep and wake states
+auditd saves audit logs to /var/audit/
+Terminal and iTerm 2 execute a command like `login -pf $USER` in new shells by default
+~/Library/Preferences/ByHost/.GlobalPreferences.*.plist has precedence over ~/.Library/Preferences/.GlobalPreferences.plist
+you can use macosx-nosleep-extension or InsomniaX to prevent sleep when the lid of a laptop is closed
+sparse bundles were added in 10.5
+you can install a .qlgenerator bundle by moving it to ~/Library/QuickLook/ or /Library/QuickLook/
+if `~/Music/iTunes/iTunes Music Library.xml` is deleted, it is recreated based on `~/Music/iTunes/iTunes Library.itl`
+adding an account to the com.apple.ssh group enables remote login and adding an account to the com.apple.access_screensharing group enables screen sharing
+Finder preserves modes and ACLs by default but the Duplicate Exactly and Paste Item Exactly commands also preserve owners and groups
+rebuilding the Launch Services database results in the dialogs about opening applications for the first time to be shown again
+when a quarantined archive is extracted with Archive Utility, /usr/bin/tar, or /usr/bin/unzip, the extracted files are also quarantined
+NSBrowser is column view and NSOutlineView is list view
+files in /System/DeferredInstall/ are installed in single user mode after restarting
+MACHTYPE is set to a value like i386-apple-darwin13.1.0 in OS X and to arm-apple-darwin in iOS
+filecoordinationd is used by NSFileCoordinator to coordinate access to files and to message NSFilePresenters
+10.5 and 10.6 included experimental support for extents-based extended attributes but it was not enabled by default
+in 10.6 the maximum length of inline extended attributes was 3802 bytes so that `xattr -w key "$(printf %3803s)" file` resulted in an error
+superuser privileges are needed to set the arch, nodump, opaque, sappnd, schg, uappend, or uchg file flag
+the recovery partition has the partition type Apple_Boot
+`diskutil enableOwnership` modifies /var/db/volinfo.database
+PackageMaker was replaced with productbuild and pkgbuild in 10.8
+/Developer/ was removed in Xcode 4.3
+some sandboxed applications add login items that are not shown in System Preferences to /var/db/launchd.db/com.apple.launchd.peruser.$UID/overrides.plist
+in old versions of OS X cp did not preserve resource forks but ditto did, but cp now preserves resource forks unless the -X option is specified
+/usr/bin/grep changed from GNU grep to BSD grep in 10.8
+folders like /Applications/ and ~/Documents/ have the ACE `0: group:everyone deny delete`
+new laptops and Macs with an SSD switch to hibernation after either three hours or 70 minutes of regular sleep under certain conditions
+since a supplemental update to 10.8, all Macs have switched to hibernation after four hours of regular sleep under certain conditions
+the fsevents log does not include every file that has changed but every directory that contains files that have changed
+file quarantine was added in 10.5
+asl.conf is used by syslogd and aslmanager
+you can add words to a spelling dictionary by adding one word per line to a file in ~/Library/Spelling/ and running `killall AppleSpell`
+boot parameters and /etc/bootparams are no longer supported
+a single repeating startup tone indicates that no RAM is found and three repeating startup tones indicates that the RAM does not pass an integrity test
+Wide Area Bonjour allows wide area service discovery via a DNS server
+.local is a pseudo-TLD for link-local hostnames that can be resolved with mDNS
+FSEvents was added in 10.5 and file coordinators were added in 10.7
+ktrace was replaced with dtrace in 10.5
+/var/db/locate.database is owned by the user nobody
+syscalls with a negative number are directed to the Mach microkernel and syscalls with a positive number are directed to the BSD monolithic kernel
+NDIF (new disk image format) was replaced with UDIF (universal disk image format) in OS X
+dig, host, and nslookup do not consider /etc/hosts, do mDNS lookups, or consider cached entries, but dscacheutil does
+NeXTSTEP was based on 4.3BSD, but according to Apple's old Darwin FAQ, the Darwin project has used FreeBSD as a reference platform
+Darwin 0.1 was released in 1999 as part of Mac OS X Server 1.0 and Darwin 1.2 was released in 2000 as part of the OS X public beta
+the Mac operating system has been called MacOS since version 7.6
+`sysctl vfs` shows iosize as 1 MiB
+ifconfig is a wrapper for the IPConfiguration agent in OS X
+the description for kMDItemDateAdded shown by `mdimport -A` is `Date when this item was last moved`
+/Users/Shared has the sticky bit set so users cannot delete files owned by other users
+memory pressure depends on vm_page_free_count which is pages that are currently free and vm_page_free_target which is how many pages should optimally be free
+~/.MacOSX/environment.plist is ignored in 10.8 and later
+you can enable showing the recovery partition and EFI partition in Disk Utility by running `defaults write com.apple.DiskUtility DUDebugMenuEnabled -bool true` and selecting "Show Every Partition" from the Debug menu
+`launchctl load -w` modifies /var/db/launchd.db/overrides.plist when it is ran as a superuser and /var/db/launchd.db/com.apple.launchd.peruser.$UID/overrides.plist when it is ran as a regular user
+running `csrutil disable` on the recovery partition disables System Integrity Protection
+`mdfind -name` also matches kMDItemDisplayName attributes
+`sudo killall -HUP mDNSResponder` resets the DNS cache in 10.10.4 and later and from 10.7 to 10.9.5
+`sudo discoveryutil mdnsflushcache` resets the DNS cache from 10.10 to 10.10.3 and from 10.6 to 10.6.8

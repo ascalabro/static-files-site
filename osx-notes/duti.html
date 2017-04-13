@@ -1,0 +1,141 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name=viewport content=width=device-width,initial-scale=1>
+<style>
+* {
+  line-height: 1.1;
+  word-wrap: break-word;
+}
+body {
+  font: 16px Georgia, serif;
+}
+pre, code {
+  font: 14px Menlo, 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', monospace;
+  white-space: pre-wrap;
+  background: #e5e5e5;
+}
+blockquote {
+  background: #e5e5e5;
+  margin-left: 0;
+  margin-right: 0;
+  border-left: 4px solid #aaa;
+  padding: 1em 0 1em 1em;
+}
+li p:first-child, blockquote p:first-child {
+  margin-top: 0;
+}
+li p:last-child, blockquote p:last-child {
+  margin-bottom: 0;
+}
+</style>
+<title>Using duti to configure the default applications for file types</title>
+<h1>Using duti to configure the default applications for file types</h1>
+<p>See <a href="http://duti.org/documentation.html">http://duti.org/documentation.html</a> or <a href="https://github.com/moretension/duti">https://github.com/moretension/duti</a> for documentation.</p>
+<p>You can install <code>duti</code> by running <code>brew install duti</code>.</p>
+<h2>My duti configuration file</h2>
+<pre><code># .txt, .text, and plain text files without an extension
+org.gnu.Emacs public.plain-text all
+
+# executable scripts
+org.gnu.Emacs public.unix-executable all
+
+com.SequentialX.Sequential .jpg all
+com.SequentialX.Sequential .png all
+com.movist.Movist .3gp all
+com.movist.Movist .avi all
+com.movist.Movist .flac all
+com.movist.Movist .flv all
+com.movist.Movist .m4v all
+com.movist.Movist .mkv all
+com.movist.Movist .mov all
+com.movist.Movist .mp4 all
+com.movist.Movist .mpg all
+com.movist.Movist .wmv all
+com.robinlu.iChm .chm all
+cx.c3.theunarchiver .rar all
+net.sourceforge.skim-app.skim .pdf all
+net.sourceforge.skim-app.skim .ps all
+org.gnu.Emacs .as all
+org.gnu.Emacs .aslquery all
+org.gnu.Emacs .ass all
+org.gnu.Emacs .bash all
+org.gnu.Emacs .bom all
+org.gnu.Emacs .c all
+org.gnu.Emacs .cfm all
+org.gnu.Emacs .cfml all
+org.gnu.Emacs .class all
+org.gnu.Emacs .conf all
+org.gnu.Emacs .cpp all
+org.gnu.Emacs .css all
+org.gnu.Emacs .csv all
+org.gnu.Emacs .ctp all
+org.gnu.Emacs .dat all
+org.gnu.Emacs .data all
+org.gnu.Emacs .dict all
+org.gnu.Emacs .doc all
+org.gnu.Emacs .el all
+org.gnu.Emacs .h all
+org.gnu.Emacs .java all
+org.gnu.Emacs .js all
+org.gnu.Emacs .json all
+org.gnu.Emacs .less all
+org.gnu.Emacs .log all
+org.gnu.Emacs .m all
+org.gnu.Emacs .manifest all
+org.gnu.Emacs .md all
+org.gnu.Emacs .mm all
+org.gnu.Emacs .nfo all
+org.gnu.Emacs .opml all
+org.gnu.Emacs .org all
+org.gnu.Emacs .pg all
+org.gnu.Emacs .php all
+org.gnu.Emacs .pl all
+org.gnu.Emacs .plist all
+org.gnu.Emacs .py all
+org.gnu.Emacs .rb all
+org.gnu.Emacs .rd all
+org.gnu.Emacs .readme all
+org.gnu.Emacs .rst all
+org.gnu.Emacs .sb all
+org.gnu.Emacs .scss all
+org.gnu.Emacs .sh all
+org.gnu.Emacs .srt all
+org.gnu.Emacs .strings all
+org.gnu.Emacs .sub all
+org.gnu.Emacs .tex all
+org.gnu.Emacs .tsv all
+org.gnu.Emacs .utf all
+org.gnu.Emacs .xml all
+org.gnu.Emacs .yaml all</code></pre>
+<p>You can usually specify file types using filename extensions instead of UTIs. <code>duti</code> converts filename extensions (like <code>.jpg</code>) to UTIs (like <code>public.jpeg</code>) that also apply to other filename extensions (like <code>.jpeg</code>). Try to look at <code>~/Library/Preferences/com.apple.LaunchServices.plist</code> after running <code>duti</code>. For some extensions like <code>.mkv</code> and <code>.tex</code>, the UTI depends on what application registered the extension first.</p>
+<h2>Applying changes to a duti configuration file automatically</h2>
+<p>Save a property list like the one below as <code>~/Library/LaunchAgents/duti.plist</code> and run <code>launchctl load ~/Library/LaunchAgents/duti.plist</code>.</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+&lt;dict&gt;
+  &lt;key&gt;EnableGlobbing&lt;/key&gt;
+  &lt;true/&gt;
+  &lt;key&gt;Label&lt;/key&gt;
+  &lt;string&gt;duti&lt;/string&gt;
+  &lt;key&gt;ProgramArguments&lt;/key&gt;
+  &lt;array&gt;
+    &lt;string&gt;/usr/local/bin/duti&lt;/string&gt;
+    &lt;string&gt;~/.duti&lt;/string&gt;
+  &lt;/array&gt;
+  &lt;key&gt;WatchPaths&lt;/key&gt;
+  &lt;array&gt;
+    &lt;string&gt;~/.duti&lt;/string&gt;
+  &lt;/array&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</code></pre>
+<p><code>EnableGlobbing</code> is only used to enable tilde expansion for <code>ProgramArguments</code>. (Tilde expansion is enabled by default in <code>WatchPaths</code>.)</p>
+<h2>Listing the filename extensions supported by an application</h2>
+<p>This lists the filename extensions of the file types supported by an application whose <code>Info.plist</code> includes <code>CFBundleTypeExtensions</code> arrays:</p>
+<pre><code>plutil -convert json /Applications/Safari.app/Contents/Info.plist -o -|jq -r &#39;.CFBundleDocumentTypes[].CFBundleTypeExtensions[]&#39;</code></pre>
+<p>This lists the filename extensions of the file types supported by an application whose <code>Info.plist</code> does not include <code>CFBundleTypeExtensions</code> arrays:</p>
+<pre><code>x=$(/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -dump)
+plutil -convert json /Applications/TextEdit.app/Contents/Info.plist -o -|jq -r &#39;.CFBundleDocumentTypes[].LSItemContentTypes[]&#39;|
+while read l;do
+  awk &quot;/uti: *$l/,/tags:/&quot;&lt;&lt;&lt;&quot;$x&quot;
+done|sed -n &#39;s/[[:blank:]]*tags: *\(.*\)/\1/p&#39;|sed $&#39;s/, /\\\n/g&#39;|grep ^\\.|sort -u</code></pre>

@@ -1,0 +1,123 @@
+#OS X
+pressing the volume keys while holding option and shift changes volume in increments of a quarter bar
+you can set the volume to a level between zero bars and one fourth bar by first setting the volume to zero and then pressing the mute key
+you can change the brightness of a second display by pressing the brightness keys while holding control
+command-F1 toggles mirroring displays
+control-F2 moves focus to the menu bar
+control-F4 moves focus to the next window on the current space
+control-F6 moves focus to a floating window like a window for fonts or colors
+command-delete selects buttons like "Don't Save"
+shift-command-. shows hidden files in a file dialog
+option-[ and option-shift-[ insert smart double quotes and option-] and option-shift-] insert smart single quotes in the U.S. QWERTY keyboard layout
+control-' and control-" insert straight quotes even when smart quotes are enabled
+you can reopen a default window for an application from the application switcher by holding option before releasing command
+you can open recent files from the application switcher by pressing the down arrow key twice
+you can see what files would be copied by an installer by pressing command-I in an installer window
+you can reveal a document in Finder by secondary-clicking the name of the document on the title bar and clicking the parent folder
+when spellchecking is not turned on, you can check if a word is spelled correctly by secondary-clicking the word and seeing if the context menu contains suggested spellings
+you can replace straight quotes with smart quotes in a selection by selecting "Substitutions > Smart Quotes" from a context menu
+you can disable the startup sound before restarting by setting the output volume to zero after disconnecting headphones or speakers
+you can take a screenshot of a window without a shadow by pressing shift-command-4, pressing space, and option-clicking a window
+
+#Character Viewer
+you can add a category for all characters to the sidebar by selecting "Customize List... > Code Tables > Unicode"
+
+#Finder
+control-option-command-2 sorts by kind, control-option-command-5 sorts by modification date, and control-option-command-6 sorts by size
+shift-command-C opens the computer view, shift-command-O opens the documents folder, and option-command-L opens the downloads folder
+you can change the default column width in column view by dragging a column while holding option
+you can search for files that are treated as system files in a Spotlight window by adding a "System files" attribute to the filter bar and setting it to "Are included"
+you can make all column view folders that display a folder under the home folder have the home folder as the root folder by adding the home folder to the sidebar and removing other folders from the sidebar
+
+#iTunes
+you can change the columns used for new playlists by changing the columns in the "My Music" view when it is displayed in the "Songs" view
+you can find recently played items by sorting items by last played in the "My Music" view
+command-up and command-down change volume
+command-N creates a new playlist and shift-command-N creates a new playlist for the selected items
+option-command-U shows the up next popover
+command-P selects the previous item and command-N selects the next item in the window for editing tags
+you can enable saving the playback position for a file like an audiobook by checking "Get Info > Options > Remember playback position"
+command-L shows the current item in the library or on the playlist the item was started from
+"View > Show Duplicate Items" shows items with similar tags
+you can remove items whose files no longer exist from a playlist by dragging all items on the playlist to a new playlist
+you can choose another iTunes library file or create a new iTunes library file by holding option while opening iTunes
+
+#Preview
+option-command-1 hides the sidebar, option-command-2 shows thumbnails, and option-command-6 shows the contact sheet view
+command-9 zooms images to fit
+
+#Safari
+shift-clicking the reload button reloads a page and bypasses the cache
+you can remove the suggested search phrases under the top hits by unchecking "Search > Include search engine suggestions" from the preferences
+control-option-tab inserts a tab in a text area
+you can open the history menu with the keyboard by pressing command-? and then pressing the left arrow key multiple times
+option-command-2 shows history and option-command-B shows bookmarks
+you can search for text in the content of history items from the option-command-2 window or with Spotlight
+shift-command-L shows or hides the sidebar
+option-command-C opens the JavaScript console and option-command-A opens the resources tab of the web inspector
+you can copy the generated source of a page by copying the root node from the DOM tree view of the web inspector
+you can open a link in a PDF by command-clicking the link
+shift-command-\ shows all tabs
+
+#System Prefences
+you can enable plaing stereo audio as mono by selecting "Audio > Play stereo audio as mono" from the Accessibility preference pane
+
+#Alfred
+command-C copies the path of the selected item
+command-down shows a folder or the containing folder of a file in the file browser
+you can use the quit and forcequit actions to quit applications
+you can use the in action to search in the text contents of PDFs, Safari history items, and text files
+you can use the define action to look up the definition of a word
+
+#iTerm 2
+you can set windows to open in full screen by default by setting "Profiles > Window > Style" to "Fullscreen" from the preferences
+you can enable using custom full screen windows that do not have animations by unchecking "General > Native full screen windows" from the preferences
+when a window contains multiple split panes, shift-command-return toggles showing only the current split pane
+command-; completes a word
+option-command-B starts instant replay
+you can select text without using a mouse by searching for the start with command-F and then pressing tab to extend the selection
+shift-command-V inserts the text that is selected in the current window
+command-clicking opens URLs and local paths
+you can make a rectangular selection by holding option and command
+
+#Movist
+option-left goes back 60 seconds and option-right goes forward 60 seconds
+option-command-left opens the previous file and option-command-right opens the next file
+control-command-V toggles showing subtitles
+control-command-S cycles through subtitle tracks
+shift-command-2 selects the second audio track
+, and . change the subtitle delay
+control-option-command-left and control-option-command-right change the audio delay
+x decreases playback speed and c increases playback speed
+you can make videos open in full screen by default by setting "General > Window > Opening View" to "Full Screen"
+you can enable remembering the previous playback position by checking "General > General > Restore play position"
+you can make subtitles be centered vertically from the preferences
+control-command-R repeats the current video
+
+#Sequential
+b selects the previous image and n selects the next image
+s scales images to fit the window
+command-3 sorts by modification time and command-4 sorts by size
+
+#Skim
+command-K crops all pages using the same crop boxes and shift-command-K crops all pages using different crop boxes
+command-1 selects the text tool, command-4 selects the selection tool, and control-command-5 selects the highlight tool
+shift-command-N shows the notes pane and shift-command-T shows the contents pane
+option-command-G goes to a page
+
+#Transmission
+option-command-delete deletes a transfer and its files
+command-. pauses the selected transfers and command-/ resumes the selected transfers
+option-command-. pauses all transfers and option-command-/ resumes all transfers
+option-command-F focuses the search field
+you can hide transfers you seed for a long time from the list of transfers by adding the transfers to a group and showing only transfers with no group by default
+
+#VLC
+command-up and command-down change volume
+you can set videos to open in full screen by default by selecting "Preferences > Video > Fullscreen"
+option-command-S saves a snapshot to ~/Pictures/
+you can make subtitles appear vertically closer to the center of the screen by changing the vertical offset from "Preferences > Show All > Video > Subtitles/OSD"
+
+#VMware Fusion
+shift-command-L shows the virtual machine library
+shift-command-S saves a snapshot and command-R restores a snapshot
